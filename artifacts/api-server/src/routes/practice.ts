@@ -69,7 +69,12 @@ router.post("/practice/sessions", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { weekNumber, topicId, tutorEnabled, focusOnWeaknesses } = parsed.data;
+  const { weekNumber, topicId, tutorEnabled, focusOnWeaknesses, initialDifficulty } =
+    parsed.data;
+  const startDifficulty =
+    typeof initialDifficulty === "number" && !Number.isNaN(initialDifficulty)
+      ? Math.max(1, Math.min(5, initialDifficulty))
+      : 2.0;
   const [created] = await db
     .insert(practiceSessionsTable)
     .values({
@@ -77,7 +82,7 @@ router.post("/practice/sessions", async (req, res): Promise<void> => {
       topicId: topicId ?? null,
       tutorEnabled,
       focusOnWeaknesses: focusOnWeaknesses ?? true,
-      difficulty: 2.0,
+      difficulty: startDifficulty,
     })
     .returning();
   if (!created) {

@@ -10,12 +10,15 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { useLocation } from "wouter";
+import { ChevronRight } from "lucide-react";
 
 export default function Analytics() {
   const { data: summary, isLoading: isLoadingSummary } = useGetAnalyticsSummary();
   const { data: topics, isLoading: isLoadingTopics } = useGetTopicAnalytics();
   const { data: activity, isLoading: isLoadingActivity } = useGetRecentActivity();
   const generateReport = useGenerateReport();
+  const [, setLocation] = useLocation();
 
   const [report, setReport] = useState<any>(null);
 
@@ -93,8 +96,19 @@ export default function Analytics() {
                       </thead>
                       <tbody className="divide-y divide-border">
                         {topics?.map(topic => (
-                          <tr key={topic.topicId} className="hover:bg-muted/50 transition-colors">
-                            <td className="p-3 font-medium">{topic.topicTitle}</td>
+                          <tr
+                            key={topic.topicId}
+                            onClick={() => setLocation(`/practice/topic/${topic.topicId}`)}
+                            className="cursor-pointer hover:bg-muted/50 transition-colors group"
+                            title={`Practice "${topic.topicTitle}" at a difficulty matched to your performance`}
+                            data-testid={`row-topic-${topic.topicId}`}
+                          >
+                            <td className="p-3 font-medium">
+                              <div className="flex items-center gap-1 group-hover:text-primary transition-colors">
+                                <span>{topic.topicTitle}</span>
+                                <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
+                            </td>
                             <td className="p-3 text-muted-foreground">Week {topic.weekNumber}</td>
                             <td className="p-3 text-right">{topic.attempts}</td>
                             <td className="p-3 text-right font-mono">{topic.accuracy}%</td>

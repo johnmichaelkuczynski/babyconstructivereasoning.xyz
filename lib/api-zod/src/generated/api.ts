@@ -275,7 +275,8 @@ export const StartPracticeSessionBody = zod.object({
   "weekNumber": zod.number().nullish(),
   "topicId": zod.number().nullish(),
   "tutorEnabled": zod.boolean(),
-  "focusOnWeaknesses": zod.boolean().default(startPracticeSessionBodyFocusOnWeaknessesDefault)
+  "focusOnWeaknesses": zod.boolean().default(startPracticeSessionBodyFocusOnWeaknessesDefault),
+  "initialDifficulty": zod.number().nullish().describe('Starting difficulty 1-5; if omitted defaults to 2.0')
 })
 
 export const StartPracticeSessionResponse = zod.object({

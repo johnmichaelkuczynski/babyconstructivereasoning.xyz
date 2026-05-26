@@ -205,6 +205,11 @@ export interface PracticeSessionInput {
   topicId?: number | null;
   tutorEnabled: boolean;
   focusOnWeaknesses?: boolean;
+  /**
+     * Starting difficulty 1-5; if omitted defaults to 2.0
+     * @nullable
+     */
+  initialDifficulty?: number | null;
 }
 
 export interface PracticeSession {
