@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { CheckCircle2, XCircle, Loader2, PlayCircle, Activity } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, PlayCircle, Activity, ShieldCheck } from "lucide-react";
 
 type Step = {
   name: string;
@@ -75,10 +75,13 @@ function ResultCard({ title, result }: { title: string; result: RunResult | null
 export default function Diagnostics() {
   const [sysBusy, setSysBusy] = useState(false);
   const [synthBusy, setSynthBusy] = useState(false);
+  const [qcBusy, setQcBusy] = useState(false);
   const [sysResult, setSysResult] = useState<RunResult | null>(null);
   const [synthResult, setSynthResult] = useState<RunResult | null>(null);
+  const [qcResult, setQcResult] = useState<RunResult | null>(null);
   const [sysError, setSysError] = useState<string | null>(null);
   const [synthError, setSynthError] = useState<string | null>(null);
+  const [qcError, setQcError] = useState<string | null>(null);
 
   async function runSystem() {
     setSysBusy(true);
@@ -114,13 +117,32 @@ export default function Diagnostics() {
     }
   }
 
+  async function runQualityControl() {
+    setQcBusy(true);
+    setQcError(null);
+    setQcResult(null);
+    try {
+      const r = await fetch(apiUrl("/diagnostics/quality-control"), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "{}",
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      setQcResult(await r.json());
+    } catch (e) {
+      setQcError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setQcBusy(false);
+    }
+  }
+
   return (
     <Layout>
       <div className="max-w-4xl mx-auto p-8 space-y-8">
         <div>
           <h1 className="font-serif text-3xl mb-1">Diagnostics</h1>
           <p className="text-muted-foreground">
-            Two self-tests to verify the course app is healthy end-to-end.
+            Three self-tests to verify the course app is healthy end-to-end.
           </p>
         </div>
 
@@ -178,6 +200,35 @@ export default function Diagnostics() {
             <div className="text-sm text-red-700 font-mono">{synthError}</div>
           )}
           <ResultCard title="Synthetic student results" result={synthResult} />
+        </section>
+
+        <section className="space-y-3">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="font-serif text-xl flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5" /> Diagnostic 3 — Answer-key quality control
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Uses OpenAI to independently re-derive the answer to a sample of course
+                problems across every unit and verify that each seeded answer key is a
+                legitimate, correct, and unambiguous answer to its prompt. Any key the model
+                judges wrong, off-topic, or ambiguous is flagged before a student is ever
+                graded against it. Each review is an LLM call, so this can take a minute.
+              </p>
+            </div>
+            <button
+              onClick={runQualityControl}
+              disabled={qcBusy}
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-60"
+            >
+              {qcBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlayCircle className="w-4 h-4" />}
+              {qcBusy ? "Running…" : "Run quality control"}
+            </button>
+          </div>
+          {qcError && (
+            <div className="text-sm text-red-700 font-mono">{qcError}</div>
+          )}
+          <ResultCard title="Answer-key quality-control results" result={qcResult} />
         </section>
       </div>
     </Layout>

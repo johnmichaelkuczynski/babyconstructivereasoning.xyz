@@ -1,1 +1,1 @@
-- [OpenAI integration env vars](openai-integration-env-vars.md) — this repo's OpenAI lib reads custom OPENAI_API_KEY / OPENAI_BASE_URL names; mismatched names fail at runtime.
+- [Course answer-key QC diagnostic](course-qc-diagnostic.md) — LLM key-legitimacy checks must judge against the course's own lecture text (not generic knowledge), or correct course-specific keys false-flag.

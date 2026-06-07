@@ -64,7 +64,7 @@ Tag groups and what they own:
 | `assignments` | `GET /assignments`, `GET /assignments/{id}`, `POST /assignments/{id}/attempt`, `PUT /assignments/{id}/attempts/{aid}/answers/{pid}`, `POST /assignments/{id}/attempts/{aid}/submit` | Homework / test flow. Submit endpoint triggers AI grade + detection per answer. |
 | `analytics` | `GET /analytics/summary`, `GET /analytics/topics`, `GET /analytics/activity` | KPIs, topic mastery, recent activity. |
 | `detection` | `POST /detection/scan` | Run AI + diachronic detection on an arbitrary text + trace. Used directly by the diagnostics page. |
-| `diagnostics` | `GET /diagnostics/system`, `POST /diagnostics/synthetic-run`, `POST /diagnostics/expand-lectures`, `POST /diagnostics/reset` | Self-tests and seed maintenance. See §6. |
+| `diagnostics` | `GET /diagnostics/system`, `POST /diagnostics/synthetic-run`, `POST /diagnostics/quality-control`, `POST /diagnostics/expand-lectures`, `POST /diagnostics/reset` | Self-tests and seed maintenance. See §6. |
 
 The submit endpoint's response schema (`AttemptResult`) bundles `score / total / percent / perProblem[] / detection[]` so the UI can render the AI-grade + detection verdict in one round-trip.
 
@@ -83,7 +83,7 @@ artifacts/api-server/src/
 │   ├── assignments.ts     attempt + grade + detect on submit
 │   ├── analytics.ts       summary / topic mastery / activity
 │   ├── detection.ts       /detection/scan passthrough
-│   ├── diagnostics.ts     two diagnostics + seed maintenance
+│   ├── diagnostics.ts     three diagnostics + seed maintenance
 │   ├── health.ts          /healthz
 │   └── index.ts           router mount
 └── lib/
@@ -169,7 +169,7 @@ This outcome is persisted on `answers` at submit time and surfaces in the assign
 
 ## 6. Diagnostics surface
 
-Two routes, one page. The page lives at `artifacts/qr-course/src/pages/Diagnostics.tsx` and is linked from the student app. **These are operator tools, not student-facing features.**
+Three routes, one page. The page lives at `artifacts/qr-course/src/pages/Diagnostics.tsx` and is linked from the student app. **These are operator tools, not student-facing features.**
 
 ### 6.1 `GET /api/diagnostics/system` — system self-test
 
@@ -198,7 +198,15 @@ Simulates a real student session against the live DB and reports each leg pass/f
 4. Create an assignment attempt, answer each problem, submit, and verify `AttemptResult` returns full `perProblem[]` + `detection[]`.
 5. Hit analytics endpoints and confirm the new attempt is reflected.
 
-### 6.3 Supporting routes (not in the diagnostics UI)
+### 6.3 `POST /api/diagnostics/quality-control` — OpenAI answer-key legitimacy check
+
+Independently re-derives the answer to a sample of course problems and verifies each seeded answer key is legitimate. Returns `{ ok, generatedAt, steps[] }` like the other diagnostics. Stages:
+
+1. Collect every assignment problem joined to its assignment, grouped by unit, and sample up to 12 with a guaranteed per-unit quota so every unit is covered even if its problem count is uneven.
+2. For each sampled problem, run a **two-phase** check: (a) the LLM independently re-derives an answer from the prompt **alone**, blind to the seeded key, so the verdict can't just rubber-stamp the key; (b) a second LLM call judges whether the seeded key is legitimate given the prompt + the independent answer, using the grader's semantic-equivalence philosophy — accepting any correct on-topic short answer and flagging only genuinely defective keys (wrong, off-topic, self-contradictory, contradicted on substance, or ungradeable). Returns `{ legitimate, confidence, rationale }`; malformed verdicts are treated as failures, not passes.
+3. A legitimate key passes its step; a flagged key fails its step with the model's rationale. A final summary step reports the legitimate/flagged tally.
+
+### 6.4 Supporting routes (not in the diagnostics UI)
 
 - `POST /api/diagnostics/expand-lectures` — generates `body_medium` / `body_long` for lectures that are missing them. Idempotent.
 - `POST /api/diagnostics/reset` — wipes attempts / answers / practice for a clean demo. **Does not** drop course content.

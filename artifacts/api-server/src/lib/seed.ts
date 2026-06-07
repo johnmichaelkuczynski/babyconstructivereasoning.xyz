@@ -827,7 +827,7 @@ const ASSIGNMENTS: SeedAssignment[] = [
     problems: [
       { topicSlug: "judging-vs-status", prompt: "Why is the moral status of judging an act different from the status of the act itself? Answer in one sentence.", correctAnswer: "Because having the right to judge requires sufficient information, which one may lack even when the act really is wrong.", explanation: "Right-to-assert depends on evidence, not just truth." },
       { topicSlug: "act-vs-agent", prompt: "On what does an agent's praise or blame depend — the outcome or the intention?", correctAnswer: "the intention", explanation: "Outcomes can mislead; intention is decisive." },
-      { topicSlug: "intention-attempts", prompt: "True or false: two people with identical intentions deserve identical praise even if one succeeds and one fails.", correctAnswer: "true", explanation: "Desert tracks intention; success is only evidence about intention's strength." },
+      { topicSlug: "intention-attempts", prompt: "True or false: an agent's praiseworthiness depends on their intention rather than on whether the act happened to succeed.", correctAnswer: "true", explanation: "Desert tracks intention; outcome is only evidence about what the intention was." },
       { topicSlug: "hitler-problem", prompt: "What is the response to the claim that Hitler 'meant well'? Answer in one sentence.", correctAnswer: "It was clearly not his intention to do good, and any such intention was grossly outweighed by his evil intentions.", explanation: "Intentions are read from the whole pattern of conduct." },
       { topicSlug: "self-harm-autonomy", prompt: "Does our refusal to punish self-harm prove that self-harm is morally permissible? Answer yes or no.", correctAnswer: "no", explanation: "Wrongdoing and desert of punishment are separate questions." },
     ],
@@ -871,7 +871,7 @@ const ASSIGNMENTS: SeedAssignment[] = [
     instructions: "Cumulative final covering Units 1–4. 90 minutes. Pasting disabled; keystrokes screened.",
     problems: [
       { topicSlug: "instrumental-intrinsic", prompt: "Which kind of goodness is ethics concerned with — instrumental or intrinsic?", correctAnswer: "intrinsic", explanation: "Ethics studies what is good in itself." },
-      { topicSlug: "non-privative", prompt: "Are 'commendable' and 'condemnable' privative or positive properties?", correctAnswer: "positive", explanation: "Neither is the absence of the other; both can co-occur." },
+      { topicSlug: "non-privative", prompt: "Is 'condemnable' simply the absence of 'commendable'? Answer yes or no.", correctAnswer: "no", explanation: "Neither property is the absence of the other, which is why a single act can be both commendable and condemnable at once." },
       { topicSlug: "right-least-bad", prompt: 'Define "right" in three words.', correctAnswer: "least bad available", explanation: "Rightness is comparative." },
       { topicSlug: "wrong-least-good", prompt: 'Define "wrong" in three words.', correctAnswer: "least good available", explanation: "A wrong act can still be good." },
       { topicSlug: "outweigh-vs-cancel", prompt: "True or false: an outweighed obligation is erased.", correctAnswer: "false", explanation: "It is overridden but persists as a residue." },

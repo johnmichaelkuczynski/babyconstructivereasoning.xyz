@@ -13,7 +13,7 @@ import {
   practiceAttemptsTable,
 } from "@workspace/db";
 import { chatText, chatJson, FAST_MODEL } from "../lib/ai";
-import { detect } from "../lib/detection";
+import { detect, gptzeroAiScore } from "../lib/detection";
 import { gradeAnswer } from "../lib/grading";
 
 const router: IRouter = Router();
@@ -107,6 +107,19 @@ router.get("/diagnostics/system", async (_req, res) => {
       });
       if (typeof r.aiScore !== "number") throw new Error("no aiScore");
       return `aiScore=${r.aiScore.toFixed(2)} diachronic=${r.diachronicScore.toFixed(2)}`;
+    }),
+  );
+
+  steps.push(
+    await run("GPTZero: API connectivity", async () => {
+      if (!process.env.GPTZERO_API_KEY)
+        throw new Error("GPTZERO_API_KEY is not set");
+      const score = await gptzeroAiScore(
+        "In conclusion, the multifaceted tapestry of ethical reasoning is paramount to navigating the labyrinthine landscape of contemporary moral discourse and its many implications.",
+      );
+      if (score == null)
+        throw new Error("GPTZero returned no score (key invalid or API down)");
+      return `live API responded · ai=${(score * 100).toFixed(0)}%`;
     }),
   );
 
@@ -402,6 +415,175 @@ router.post("/diagnostics/synthetic-run", async (_req, res) => {
       );
       if (!out.narrative) throw new Error("no narrative");
       return `narrative ${out.narrative.length} chars · ${out.recommendations.length} recs`;
+    }),
+  );
+
+  const ok = steps.every((s) => s.ok);
+  res.json({ ok, generatedAt: new Date().toISOString(), steps });
+});
+
+// ---------- Diagnostic 3: OpenAI answer-legitimacy quality control ----------
+// Independently re-derives the answer to each course problem with the LLM and
+// checks that the seeded model answer is actually a legitimate, correct answer
+// to its prompt. Catches bad/ambiguous keys before a student is ever graded
+// against them.
+router.post("/diagnostics/quality-control", async (_req, res) => {
+  const steps: Step[] = [];
+  res.setTimeout(10 * 60 * 1000);
+
+  // Build a sample of problems spread across every assignment/unit.
+  let sample: {
+    id: number;
+    prompt: string;
+    correctAnswer: string;
+    assignmentTitle: string;
+    weekNumber: number;
+    kind: string;
+    lectureBody: string;
+  }[] = [];
+
+  steps.push(
+    await run("Collect course problems for review", async () => {
+      const rows = await db
+        .select({
+          id: problemsTable.id,
+          prompt: problemsTable.prompt,
+          correctAnswer: problemsTable.correctAnswer,
+          assignmentTitle: assignmentsTable.title,
+          weekNumber: assignmentsTable.weekNumber,
+          kind: assignmentsTable.kind,
+          lectureBody: lecturesTable.body,
+        })
+        .from(problemsTable)
+        .innerJoin(
+          assignmentsTable,
+          eq(problemsTable.assignmentId, assignmentsTable.id),
+        )
+        .innerJoin(lecturesTable, eq(lecturesTable.topicId, problemsTable.topicId))
+        .orderBy(asc(assignmentsTable.weekNumber), asc(problemsTable.position));
+      if (rows.length === 0) throw new Error("no problems to review");
+
+      // Sample up to MAX_REVIEW problems with guaranteed per-unit coverage:
+      // group by unit, give each unit an equal quota, then evenly stride within
+      // the unit. This keeps the check fast but never skips a unit even if the
+      // problem distribution across units is uneven.
+      const MAX_REVIEW = 12;
+      if (rows.length <= MAX_REVIEW) {
+        sample = rows;
+      } else {
+        const byUnit = new Map<number, typeof rows>();
+        for (const r of rows) {
+          const list = byUnit.get(r.weekNumber) ?? [];
+          list.push(r);
+          byUnit.set(r.weekNumber, list);
+        }
+        const units = [...byUnit.keys()].sort((a, b) => a - b);
+        const base = Math.floor(MAX_REVIEW / units.length);
+        let remainder = MAX_REVIEW % units.length;
+        const picked: typeof rows = [];
+        for (const u of units) {
+          const list = byUnit.get(u)!;
+          const quota = Math.min(list.length, base + (remainder > 0 ? 1 : 0));
+          if (remainder > 0) remainder -= 1;
+          const stride = list.length / quota;
+          for (let i = 0; i < quota; i++) {
+            picked.push(list[Math.floor(i * stride)]!);
+          }
+        }
+        sample = picked;
+      }
+      return `reviewing ${sample.length} of ${rows.length} problems`;
+    }),
+  );
+
+  let legitimate = 0;
+  let suspect = 0;
+  for (const p of sample) {
+    steps.push(
+      // eslint-disable-next-line no-loop-func
+      await run(
+        `${p.assignmentTitle} (unit ${p.weekNumber}, ${p.kind}): "${p.prompt.slice(0, 80)}${
+          p.prompt.length > 80 ? "…" : ""
+        }"`,
+        async () => {
+          // The course is grounded in a specific source text, whose framework and
+          // terminology can differ from mainstream philosophy. Both phases are
+          // grounded in THIS lecture so the check judges keys against what the
+          // course actually teaches — not generic textbook ethics.
+          const lecture = p.lectureBody.slice(0, 3500);
+
+          // Phase 1 — independently re-derive the answer from the prompt + the
+          // course's own lecture, blind to the seeded key, so the verdict can't
+          // just rubber-stamp the key.
+          const derived = await chatText(
+            "You are a strong college ethics student answering a short-answer problem. " +
+              "Base your answer on the course lecture provided, using its framework and terminology rather than outside theories. " +
+              "Answer the prompt directly and concisely (one or two sentences, or just the requested word). " +
+              "Do not restate the prompt or add commentary.\n\n=== COURSE LECTURE ===\n" +
+              lecture,
+            p.prompt,
+          );
+
+          // Phase 2 — judge whether the seeded key is a legitimate answer, given
+          // the course lecture, the prompt, and our independent answer, using the
+          // grader's semantic-equivalence philosophy.
+          const verdict = await chatJson<{
+            legitimate: boolean;
+            confidence: number;
+            rationale: string;
+          }>(
+            "You are an academic quality-control reviewer for a college ethics course. " +
+              "You are given the course lecture the problem is drawn from, a problem prompt, the SHORT answer key the course grades students against, and an independently derived answer produced without seeing the key. " +
+              "Judge the key ONLY against what THIS lecture teaches — its definitions, framework, and terminology — not against outside or mainstream philosophy that the lecture does not use. " +
+              "Answers are graded by semantic equivalence: a key is legitimate if it is a correct, on-topic answer that a fair grader would accept given the lecture — it does NOT have to be the only possible answer, the most general phrasing, exhaustive, or identical to the independent answer. " +
+              "Use the independent answer only as a cross-check; the key and the independent answer can both be correct while differing in wording or emphasis. Watch for polarity on yes/no and negated prompts. " +
+              "Mark a key NOT legitimate ONLY when it is genuinely defective relative to the lecture: factually or philosophically wrong by the lecture's own account, off-topic, self-contradictory, or so ambiguous it could not be graded fairly. " +
+              "Do not penalize a key merely for being brief, for being one of several acceptable answers, for omitting nuance the short format can't carry, or for using the lecture's terminology instead of mainstream terms. " +
+              'Respond as strict JSON: {"legitimate": boolean, "confidence": number between 0 and 1, "rationale": string (1-2 sentences)}.',
+            JSON.stringify({
+              course_lecture: lecture,
+              prompt: p.prompt,
+              answer_key: p.correctAnswer,
+              independently_derived_answer: derived.trim(),
+            }),
+          );
+
+          // Harden parsing: any malformed verdict is a diagnostic failure, not a
+          // pass — we can't trust a QC result we couldn't validate.
+          if (typeof verdict.legitimate !== "boolean")
+            throw new Error("grader returned no boolean verdict");
+          if (
+            typeof verdict.confidence !== "number" ||
+            !Number.isFinite(verdict.confidence) ||
+            verdict.confidence < 0 ||
+            verdict.confidence > 1
+          )
+            throw new Error(
+              `grader returned invalid confidence: ${String(verdict.confidence)}`,
+            );
+          if (
+            typeof verdict.rationale !== "string" ||
+            !verdict.rationale.trim()
+          )
+            throw new Error("grader returned no rationale");
+          const rationale = verdict.rationale.trim();
+          const conf = Math.round(verdict.confidence * 100);
+          if (verdict.legitimate) {
+            legitimate += 1;
+            return `legitimate (confidence ${conf}%) — ${rationale}`;
+          }
+          suspect += 1;
+          throw new Error(
+            `flagged as not legitimate (confidence ${conf}%) — ${rationale}`,
+          );
+        },
+      ),
+    );
+  }
+
+  steps.push(
+    await run("Quality-control summary", async () => {
+      return `${legitimate} legitimate · ${suspect} flagged out of ${sample.length} reviewed`;
     }),
   );
 
