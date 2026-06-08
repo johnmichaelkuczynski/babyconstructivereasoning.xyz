@@ -9,6 +9,16 @@ import {
   doublePrecision,
 } from "drizzle-orm/pg-core";
 
+// Key/value bookkeeping for the seeder. Stores the content version of the
+// currently-seeded curriculum so that a republished build whose seed content
+// changed can detect the mismatch on boot and re-seed automatically, instead
+// of relying solely on the presence of a marker topic.
+export const seedMetaTable = pgTable("seed_meta", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const topicsTable = pgTable("topics", {
   id: serial("id").primaryKey(),
   slug: text("slug").notNull().unique(),

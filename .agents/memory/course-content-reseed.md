@@ -1,19 +1,20 @@
 ---
-name: Course content reseed (math → ethics migration)
-description: Why a "seed only if empty" guard strands migrated course content in existing DBs, and the self-healing fix.
+name: Course content reseed (seeded data migrations)
+description: How to make seeded reference-data changes self-heal across all DBs (incl. prod) instead of stranding old rows.
 ---
 
-# Self-healing course-content seed
+# Self-healing seeded course content
 
-The course content (topics/lectures/assignments/problems) lives as **data rows**, seeded by the API server on startup. The original guard only seeded when `topics` was empty.
+Course content (topics/lectures/assignments/problems) is **data rows** seeded by the API server on startup, not files. So changing the seed file does NOT update databases that already have rows — dev and prod keep the old content.
 
-**The trap:** when the curriculum was migrated (Quantitative Reasoning → Ethics), only the seed *file* and branding changed. Every database that already had rows (dev AND production) kept the **old content forever**, because the empty-check skipped reseeding. Re-publishing does NOT fix this — Replit's publish flow migrates **schema**, not data, and the production app's own startup seed still sees a non-empty table and skips.
+**Why prod is the hard case:** republishing migrates **schema, not data**, and agent `executeSql` against prod is **read-only**. The only thing that can replace stale prod *data* is the app's own startup seed logic. (Data replacement is not a schema migration, so it doesn't violate the "don't script prod schema migrations" rule.)
 
-**Why production is the hard case:** the agent's `executeSql` against production is **read-only**, so the only way to replace stale production *data* is the app's own startup logic. (This is data, not a schema migration, so it does not violate the "don't script production schema migrations" rule.)
+**Two-part gate that actually self-heals:**
+- A **content marker** (known row's existence) alone is NOT enough: once the marker exists, later edits to the *same* content are never picked up.
+- Add a **content version** stamped in a tiny `seed_meta` key/value table. Reseed when the marker is missing OR the stored version != the current `SEED_CONTENT_VERSION`. **Bump the version constant on every seed-content edit** or the change won't propagate.
+- Do the wipe + full reseed + version-stamp in **one transaction**, so the marker/version only become visible after the whole curriculum commits (a mid-seed crash rolls back instead of stranding partial content).
+- Reading `seed_meta` must tolerate the table not existing yet (treat as version-unset) so a boot that races schema migration still heals on the next boot.
 
-**The fix (in `artifacts/api-server/src/lib/seed.ts`):**
-- Detect a **content marker** (a known topic slug, e.g. `what-is-ethics`) instead of mere emptiness.
-- Marker present → skip. Absent but other rows exist → stale content → `TRUNCATE ... RESTART IDENTITY CASCADE` the course + student-progress tables, then reseed. Empty → seed normally.
-- **Wrap the truncate + full reseed in ONE `db.transaction`.** Marker-only detection + destructive truncate is unsafe otherwise: a crash after the first insert but before completion would leave the marker present and the course partially seeded, and every future boot would skip. The transaction makes the marker visible only after the whole curriculum commits, and TRUNCATE's ACCESS EXCLUSIVE lock means concurrent readers never see a half-empty course.
+**Tradeoff:** a version bump TRUNCATEs student-progress tables too. Acceptable for a single-user/self-paced course; reconsider if multi-user.
 
-**Why:** content migrations of seeded data must be self-healing via a marker, or existing/production DBs silently keep the old content. **How to apply:** any time seeded reference data changes meaning (not just shape), gate the reseed on a content marker and replace-in-transaction, don't gate on emptiness.
+**Why:** seeded reference data that changes *meaning* (not just shape) silently rots in existing/prod DBs unless the reseed is gated on a version, not just emptiness or a marker.

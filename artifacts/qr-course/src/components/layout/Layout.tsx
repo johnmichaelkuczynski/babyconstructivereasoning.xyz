@@ -22,10 +22,10 @@ export function Sidebar() {
       <div className="p-6 border-b border-border">
         <Link href="/dashboard">
           <div className="flex items-center gap-3 cursor-pointer">
-            <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center text-primary-foreground font-serif font-bold text-lg">
-              ER
+            <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center text-primary-foreground font-serif font-bold text-sm">
+              101
             </div>
-            <span className="font-serif font-semibold text-lg tracking-tight">EthosReason</span>
+            <span className="font-serif font-semibold text-lg tracking-tight">Ethics 101</span>
           </div>
         </Link>
       </div>
