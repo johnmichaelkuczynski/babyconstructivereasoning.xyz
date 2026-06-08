@@ -310,10 +310,11 @@ function TutorPane({
     ? "Ask about the highlighted passage…"
     : "Ask anything about this lecture… (Shift+Enter for newline)";
 
-  function sendMessage(msg: string) {
+  function sendMessage(msg: string, displayOverride?: string) {
     const text = msg.trim();
     if (!text) return;
-    setHistory((h) => [...h, { role: "user", text }]);
+    const shown = (displayOverride ?? msg).trim();
+    setHistory((h) => [...h, { role: "user", text: shown }]);
     ask.mutate(
       {
         data: {
@@ -347,15 +348,15 @@ function TutorPane({
   function submitAttempt(question: string, attempt: string) {
     const a = attempt.trim();
     if (!a) return;
-    const prompt =
-      `I'm trying to answer this starter question myself before you explain.\n\n` +
-      `QUESTION: ${question}\n\n` +
-      `MY ANSWER: ${a}\n\n` +
-      `Please (1) tell me clearly whether my answer is correct, partly correct, or wrong; ` +
-      `(2) point to the specific part of my reasoning that's right or off; ` +
-      `(3) then give the full correct answer with a brief worked example. ` +
-      `Keep it tight — don't restate the lecture.`;
-    sendMessage(prompt);
+    // The student sees only their own answer; the question + grading
+    // instructions are sent to the tutor as hidden context.
+    const backendMessage =
+      `The student is answering this starter question: "${question}"\n\n` +
+      `Their answer: "${a}"\n\n` +
+      `Tell them whether it's correct, partly correct, or wrong, point to the ` +
+      `specific part of their reasoning that's right or off, then give the ` +
+      `correct answer with a brief worked example. Keep it tight.`;
+    sendMessage(backendMessage, a);
   }
 
   const visibleSuggestions = (suggestions ?? []).filter((_, i) => !dismissed.has(i));

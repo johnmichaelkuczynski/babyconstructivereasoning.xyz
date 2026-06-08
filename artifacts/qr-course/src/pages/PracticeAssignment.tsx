@@ -80,10 +80,11 @@ export default function PracticeAssignment() {
     );
   }
 
-  function sendToTutor(message: string) {
+  function sendToTutor(message: string, displayOverride?: string) {
     const text = message.trim();
     if (!text) return;
-    setHistory((h) => [...h, { role: "user", text }]);
+    const shown = (displayOverride ?? message).trim();
+    setHistory((h) => [...h, { role: "user", text: shown }]);
     ask.mutate(
       { data: { message: text } },
       {
@@ -99,14 +100,15 @@ export default function PracticeAssignment() {
   }
 
   function discussFeedback(r: PracticeAssignmentResult) {
-    const msg =
-      `I'm reviewing feedback on a practice problem and want to understand it better.\n\n` +
+    // Hidden context for the tutor; the student sees a natural question.
+    const backendMessage =
+      `The student wants to discuss feedback on this practice problem.\n\n` +
       `PROBLEM: ${r.prompt}\n\n` +
-      `MY ANSWER: ${r.userAnswer || "(left blank)"}\n\n` +
+      `THEIR ANSWER: ${r.userAnswer || "(left blank)"}\n\n` +
       `MODEL ANSWER: ${r.correctAnswer}\n\n` +
-      `FEEDBACK I GOT: ${r.feedback}\n\n` +
-      `Walk me through what I missed and how to think about it, then check my understanding with a follow-up question.`;
-    sendToTutor(msg);
+      `FEEDBACK THEY GOT: ${r.feedback}\n\n` +
+      `Walk them through what they missed and how to think about it, then check their understanding with a follow-up question.`;
+    sendToTutor(backendMessage, "Can you walk me through what I missed on this one?");
   }
 
   const resultById = new Map((results ?? []).map((r) => [r.problemId, r]));
