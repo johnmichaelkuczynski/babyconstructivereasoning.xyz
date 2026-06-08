@@ -1,5 +1,16 @@
 uploads = []
-generated = []
+
+[[generated]]
+id = "uM7_r5QfH4ARQSMJWuxk5"
+uri = "file://artifacts/diagnostics-demo/public/images/bg-navy-abstract.png"
+type = "image"
+title = "Navy blue abstract academic background"
+
+[[generated]]
+id = "7dGARkwxh8SWkd6ZAqyUT"
+uri = "file://artifacts/diagnostics-demo/public/images/bg-balance-scale.png"
+type = "image"
+title = "Ethical balance scale abstract"
 
 [[outputs]]
 id = "k9ub7M-_NtEMTP4gQFmL8"
@@ -18,3 +29,9 @@ id = "gBlmXbiu3K5FNCNv2fX9f"
 uri = "file://README.md"
 type = "text"
 title = "EthosReason README"
+
+[[outputs]]
+id = "FqMnfCzm6r7Jw0r0ejNvV"
+uri = "file://artifacts/diagnostics-demo/public/audio/bg_music.mp3"
+type = "audio"
+title = "background music"
