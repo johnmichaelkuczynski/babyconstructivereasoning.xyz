@@ -11,6 +11,7 @@ import {
   practiceSessionsTable,
   practiceProblemsTable,
   practiceAttemptsTable,
+  diagnosticAttemptsTable,
 } from "@workspace/db";
 import { chatText, chatJson, FAST_MODEL } from "../lib/ai";
 import { detect, gptzeroAiScore } from "../lib/detection";
@@ -686,6 +687,8 @@ router.post("/diagnostics/reset", async (_req, res) => {
   await db.delete(practiceSessionsTable);
   await db.delete(answersTable);
   await db.delete(attemptsTable);
+  // Diagnostic attempts are student progress; seeded assessments/items are kept.
+  await db.delete(diagnosticAttemptsTable);
   res.json({ ok: true, resetAt: new Date().toISOString() });
 });
 

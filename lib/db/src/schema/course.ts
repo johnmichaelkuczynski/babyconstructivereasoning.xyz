@@ -130,3 +130,50 @@ export const practiceAttemptsTable = pgTable("practice_attempts", {
   trace: jsonb("trace"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// ---------------------------------------------------------------------------
+// Diagnostic reasoning assessments (embedded program-level instruments).
+// Two original instruments — Ethical Reasoning (DIT-style) and Critical
+// Reasoning (CCTST-style) — each administered 5 times (baseline + after each
+// of the 4 units) with mutually unique items. Pass/Fail: submitting = pass.
+// ---------------------------------------------------------------------------
+
+export const diagnosticAssessmentsTable = pgTable("diagnostic_assessments", {
+  id: serial("id").primaryKey(),
+  instrument: text("instrument").notNull(), // ethical | critical
+  phase: text("phase").notNull(), // baseline | unit1 | unit2 | unit3 | unit4
+  title: text("title").notNull(),
+  subtitle: text("subtitle"),
+  instructions: text("instructions").notNull(),
+  position: integer("position").notNull().default(0),
+});
+
+export const diagnosticItemsTable = pgTable("diagnostic_items", {
+  id: serial("id").primaryKey(),
+  assessmentId: integer("assessment_id")
+    .notNull()
+    .references(() => diagnosticAssessmentsTable.id, { onDelete: "cascade" }),
+  position: integer("position").notNull(),
+  type: text("type").notNull(), // dilemma | mcq
+  prompt: text("prompt").notNull(),
+  // Public payload sent to the client: for mcq -> { options: string[] };
+  // for dilemma -> { decisionOptions: string[], considerations: string[] }.
+  payload: jsonb("payload").notNull(),
+  // Hidden scoring key, never sent to the client: for mcq ->
+  // { correctIndex, skillArea }; for dilemma -> { stages: string[], rankCount }.
+  scoring: jsonb("scoring").notNull(),
+});
+
+export const diagnosticAttemptsTable = pgTable("diagnostic_attempts", {
+  id: serial("id").primaryKey(),
+  assessmentId: integer("assessment_id")
+    .notNull()
+    .references(() => diagnosticAssessmentsTable.id, { onDelete: "cascade" }),
+  status: text("status").notNull().default("in_progress"), // in_progress | submitted
+  passed: boolean("passed"),
+  feedback: text("feedback"),
+  responses: jsonb("responses"),
+  scoreSummary: jsonb("score_summary"),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  submittedAt: timestamp("submitted_at", { withTimezone: true }),
+});

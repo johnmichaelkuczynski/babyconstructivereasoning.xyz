@@ -444,3 +444,125 @@ export const GenerateReportResponse = zod.object({
 })
 
 
+/**
+ * @summary List all diagnostic reasoning assessments with attempt status
+ */
+export const ListReasoningAssessmentsResponseItem = zod.object({
+  "id": zod.number(),
+  "instrument": zod.enum(['ethical', 'critical']),
+  "phase": zod.enum(['baseline', 'unit1', 'unit2', 'unit3', 'unit4']),
+  "title": zod.string(),
+  "subtitle": zod.string().nullish(),
+  "itemCount": zod.number(),
+  "status": zod.enum(['not_started', 'in_progress', 'passed']),
+  "lastAttemptId": zod.number().nullish()
+})
+export const ListReasoningAssessmentsResponse = zod.array(ListReasoningAssessmentsResponseItem)
+
+
+/**
+ * @summary Get one assessment with its items (no scoring keys exposed)
+ */
+export const GetReasoningAssessmentParams = zod.object({
+  "assessmentId": zod.coerce.number()
+})
+
+export const GetReasoningAssessmentResponse = zod.object({
+  "id": zod.number(),
+  "instrument": zod.enum(['ethical', 'critical']),
+  "phase": zod.enum(['baseline', 'unit1', 'unit2', 'unit3', 'unit4']),
+  "title": zod.string(),
+  "subtitle": zod.string().nullish(),
+  "instructions": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.number(),
+  "position": zod.number(),
+  "type": zod.enum(['dilemma', 'mcq']),
+  "prompt": zod.string(),
+  "options": zod.array(zod.string()).nullish().describe('For mcq items — the answer choices.'),
+  "decisionOptions": zod.array(zod.string()).nullish().describe('For dilemma items — the possible decisions on the scenario.'),
+  "considerations": zod.array(zod.string()).nullish().describe('For dilemma items — statements to rate by importance and rank.'),
+  "rankCount": zod.number().nullish().describe('For dilemma items — how many top considerations to rank.')
+}))
+})
+
+
+/**
+ * @summary Start (or resume) an attempt on a diagnostic assessment
+ */
+export const StartReasoningAttemptParams = zod.object({
+  "assessmentId": zod.coerce.number()
+})
+
+export const StartReasoningAttemptResponse = zod.object({
+  "id": zod.number(),
+  "assessmentId": zod.number(),
+  "status": zod.enum(['in_progress', 'submitted']),
+  "startedAt": zod.coerce.date(),
+  "submittedAt": zod.coerce.date().nullish(),
+  "passed": zod.boolean().nullish(),
+  "feedback": zod.string().nullish()
+})
+
+
+/**
+ * @summary Submit responses; records a pass and returns written feedback
+ */
+export const SubmitReasoningAttemptParams = zod.object({
+  "assessmentId": zod.coerce.number()
+})
+
+export const SubmitReasoningAttemptBody = zod.object({
+  "responses": zod.array(zod.object({
+  "itemId": zod.number(),
+  "selectedIndex": zod.number().nullish().describe('mcq — chosen option index.'),
+  "decisionIndex": zod.number().nullish().describe('dilemma — chosen decision index.'),
+  "ratings": zod.array(zod.number()).nullish().describe('dilemma — importance rating (0-4) per consideration, by index.'),
+  "ranking": zod.array(zod.number()).nullish().describe('dilemma — consideration indices ranked most-important first.')
+}))
+})
+
+export const SubmitReasoningAttemptResponse = zod.object({
+  "attemptId": zod.number(),
+  "passed": zod.boolean(),
+  "feedback": zod.string(),
+  "headline": zod.string(),
+  "metrics": zod.array(zod.object({
+  "label": zod.string(),
+  "value": zod.string(),
+  "detail": zod.string().nullish()
+}))
+})
+
+
+/**
+ * @summary Course gradebook (coursework 80% + diagnostics 20%)
+ */
+export const GetGradebookResponse = zod.object({
+  "overallPercent": zod.number(),
+  "letterGrade": zod.string(),
+  "components": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "weightPercent": zod.number(),
+  "earnedPercent": zod.number(),
+  "detail": zod.string()
+})),
+  "coursework": zod.array(zod.object({
+  "id": zod.number(),
+  "kind": zod.enum(['homework', 'test', 'midterm', 'final']),
+  "title": zod.string(),
+  "weekNumber": zod.number(),
+  "status": zod.enum(['not_started', 'in_progress', 'submitted']),
+  "bestScore": zod.number().nullish()
+})),
+  "reasoning": zod.array(zod.object({
+  "id": zod.number(),
+  "instrument": zod.enum(['ethical', 'critical']),
+  "phase": zod.enum(['baseline', 'unit1', 'unit2', 'unit3', 'unit4']),
+  "title": zod.string(),
+  "status": zod.enum(['not_started', 'in_progress', 'passed'])
+}))
+})
+
+

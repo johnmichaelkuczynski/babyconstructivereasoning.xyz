@@ -351,3 +351,254 @@ export interface CourseOverview {
   totals: CourseOverviewTotals;
 }
 
+export type ReasoningAssessmentSummaryInstrument = typeof ReasoningAssessmentSummaryInstrument[keyof typeof ReasoningAssessmentSummaryInstrument];
+
+
+export const ReasoningAssessmentSummaryInstrument = {
+  ethical: 'ethical',
+  critical: 'critical',
+} as const;
+
+export type ReasoningAssessmentSummaryPhase = typeof ReasoningAssessmentSummaryPhase[keyof typeof ReasoningAssessmentSummaryPhase];
+
+
+export const ReasoningAssessmentSummaryPhase = {
+  baseline: 'baseline',
+  unit1: 'unit1',
+  unit2: 'unit2',
+  unit3: 'unit3',
+  unit4: 'unit4',
+} as const;
+
+export type ReasoningAssessmentSummaryStatus = typeof ReasoningAssessmentSummaryStatus[keyof typeof ReasoningAssessmentSummaryStatus];
+
+
+export const ReasoningAssessmentSummaryStatus = {
+  not_started: 'not_started',
+  in_progress: 'in_progress',
+  passed: 'passed',
+} as const;
+
+export interface ReasoningAssessmentSummary {
+  id: number;
+  instrument: ReasoningAssessmentSummaryInstrument;
+  phase: ReasoningAssessmentSummaryPhase;
+  title: string;
+  /** @nullable */
+  subtitle?: string | null;
+  itemCount: number;
+  status: ReasoningAssessmentSummaryStatus;
+  /** @nullable */
+  lastAttemptId?: number | null;
+}
+
+export type ReasoningItemType = typeof ReasoningItemType[keyof typeof ReasoningItemType];
+
+
+export const ReasoningItemType = {
+  dilemma: 'dilemma',
+  mcq: 'mcq',
+} as const;
+
+export interface ReasoningItem {
+  id: number;
+  position: number;
+  type: ReasoningItemType;
+  prompt: string;
+  /**
+     * For mcq items — the answer choices.
+     * @nullable
+     */
+  options?: string[] | null;
+  /**
+     * For dilemma items — the possible decisions on the scenario.
+     * @nullable
+     */
+  decisionOptions?: string[] | null;
+  /**
+     * For dilemma items — statements to rate by importance and rank.
+     * @nullable
+     */
+  considerations?: string[] | null;
+  /**
+     * For dilemma items — how many top considerations to rank.
+     * @nullable
+     */
+  rankCount?: number | null;
+}
+
+export type ReasoningAssessmentInstrument = typeof ReasoningAssessmentInstrument[keyof typeof ReasoningAssessmentInstrument];
+
+
+export const ReasoningAssessmentInstrument = {
+  ethical: 'ethical',
+  critical: 'critical',
+} as const;
+
+export type ReasoningAssessmentPhase = typeof ReasoningAssessmentPhase[keyof typeof ReasoningAssessmentPhase];
+
+
+export const ReasoningAssessmentPhase = {
+  baseline: 'baseline',
+  unit1: 'unit1',
+  unit2: 'unit2',
+  unit3: 'unit3',
+  unit4: 'unit4',
+} as const;
+
+export interface ReasoningAssessment {
+  id: number;
+  instrument: ReasoningAssessmentInstrument;
+  phase: ReasoningAssessmentPhase;
+  title: string;
+  /** @nullable */
+  subtitle?: string | null;
+  instructions: string;
+  items: ReasoningItem[];
+}
+
+export type ReasoningAttemptStateStatus = typeof ReasoningAttemptStateStatus[keyof typeof ReasoningAttemptStateStatus];
+
+
+export const ReasoningAttemptStateStatus = {
+  in_progress: 'in_progress',
+  submitted: 'submitted',
+} as const;
+
+export interface ReasoningAttemptState {
+  id: number;
+  assessmentId: number;
+  status: ReasoningAttemptStateStatus;
+  startedAt: string;
+  /** @nullable */
+  submittedAt?: string | null;
+  /** @nullable */
+  passed?: boolean | null;
+  /** @nullable */
+  feedback?: string | null;
+}
+
+export interface ReasoningResponseInput {
+  itemId: number;
+  /**
+     * mcq — chosen option index.
+     * @nullable
+     */
+  selectedIndex?: number | null;
+  /**
+     * dilemma — chosen decision index.
+     * @nullable
+     */
+  decisionIndex?: number | null;
+  /**
+     * dilemma — importance rating (0-4) per consideration, by index.
+     * @nullable
+     */
+  ratings?: number[] | null;
+  /**
+     * dilemma — consideration indices ranked most-important first.
+     * @nullable
+     */
+  ranking?: number[] | null;
+}
+
+export interface SubmitReasoningBody {
+  responses: ReasoningResponseInput[];
+}
+
+export interface ReasoningMetric {
+  label: string;
+  value: string;
+  /** @nullable */
+  detail?: string | null;
+}
+
+export interface ReasoningResult {
+  attemptId: number;
+  passed: boolean;
+  feedback: string;
+  headline: string;
+  metrics: ReasoningMetric[];
+}
+
+export interface GradeComponent {
+  key: string;
+  label: string;
+  weightPercent: number;
+  earnedPercent: number;
+  detail: string;
+}
+
+export type GradebookCourseworkItemKind = typeof GradebookCourseworkItemKind[keyof typeof GradebookCourseworkItemKind];
+
+
+export const GradebookCourseworkItemKind = {
+  homework: 'homework',
+  test: 'test',
+  midterm: 'midterm',
+  final: 'final',
+} as const;
+
+export type GradebookCourseworkItemStatus = typeof GradebookCourseworkItemStatus[keyof typeof GradebookCourseworkItemStatus];
+
+
+export const GradebookCourseworkItemStatus = {
+  not_started: 'not_started',
+  in_progress: 'in_progress',
+  submitted: 'submitted',
+} as const;
+
+export interface GradebookCourseworkItem {
+  id: number;
+  kind: GradebookCourseworkItemKind;
+  title: string;
+  weekNumber: number;
+  status: GradebookCourseworkItemStatus;
+  /** @nullable */
+  bestScore?: number | null;
+}
+
+export type GradebookReasoningItemInstrument = typeof GradebookReasoningItemInstrument[keyof typeof GradebookReasoningItemInstrument];
+
+
+export const GradebookReasoningItemInstrument = {
+  ethical: 'ethical',
+  critical: 'critical',
+} as const;
+
+export type GradebookReasoningItemPhase = typeof GradebookReasoningItemPhase[keyof typeof GradebookReasoningItemPhase];
+
+
+export const GradebookReasoningItemPhase = {
+  baseline: 'baseline',
+  unit1: 'unit1',
+  unit2: 'unit2',
+  unit3: 'unit3',
+  unit4: 'unit4',
+} as const;
+
+export type GradebookReasoningItemStatus = typeof GradebookReasoningItemStatus[keyof typeof GradebookReasoningItemStatus];
+
+
+export const GradebookReasoningItemStatus = {
+  not_started: 'not_started',
+  in_progress: 'in_progress',
+  passed: 'passed',
+} as const;
+
+export interface GradebookReasoningItem {
+  id: number;
+  instrument: GradebookReasoningItemInstrument;
+  phase: GradebookReasoningItemPhase;
+  title: string;
+  status: GradebookReasoningItemStatus;
+}
+
+export interface Gradebook {
+  overallPercent: number;
+  letterGrade: string;
+  components: GradeComponent[];
+  coursework: GradebookCourseworkItem[];
+  reasoning: GradebookReasoningItem[];
+}
+

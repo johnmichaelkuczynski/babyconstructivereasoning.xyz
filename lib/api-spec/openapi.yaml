@@ -22,6 +22,8 @@ tags:
     description: AI-generation and diachronic detection
   - name: analytics
     description: User performance analytics and reports
+  - name: reasoning
+    description: Embedded diagnostic reasoning assessments and the course gradebook
 paths:
   /healthz:
     get:
@@ -371,6 +373,94 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AnalyticsReport"
+
+  /reasoning/assessments:
+    get:
+      operationId: listReasoningAssessments
+      tags: [reasoning]
+      summary: List all diagnostic reasoning assessments with attempt status
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReasoningAssessmentSummary"
+
+  /reasoning/assessments/{assessmentId}:
+    get:
+      operationId: getReasoningAssessment
+      tags: [reasoning]
+      summary: Get one assessment with its items (no scoring keys exposed)
+      parameters:
+        - name: assessmentId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReasoningAssessment"
+
+  /reasoning/assessments/{assessmentId}/start:
+    post:
+      operationId: startReasoningAttempt
+      tags: [reasoning]
+      summary: Start (or resume) an attempt on a diagnostic assessment
+      parameters:
+        - name: assessmentId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReasoningAttemptState"
+
+  /reasoning/assessments/{assessmentId}/submit:
+    post:
+      operationId: submitReasoningAttempt
+      tags: [reasoning]
+      summary: Submit responses; records a pass and returns written feedback
+      parameters:
+        - name: assessmentId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitReasoningBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReasoningResult"
+
+  /reasoning/grades:
+    get:
+      operationId: getGradebook
+      tags: [reasoning]
+      summary: Course gradebook (coursework 80% + diagnostics 20%)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Gradebook"
 
 components:
   schemas:
@@ -730,3 +820,191 @@ components:
             assignmentsCompleted: { type: integer }
             assignmentsTotal: { type: integer }
             practiceCount: { type: integer }
+
+    ReasoningAssessmentSummary:
+      type: object
+      required: [id, instrument, phase, title, itemCount, status]
+      properties:
+        id: { type: integer }
+        instrument:
+          type: string
+          enum: [ethical, critical]
+        phase:
+          type: string
+          enum: [baseline, unit1, unit2, unit3, unit4]
+        title: { type: string }
+        subtitle: { type: ["string", "null"] }
+        itemCount: { type: integer }
+        status:
+          type: string
+          enum: [not_started, in_progress, passed]
+        lastAttemptId: { type: ["integer", "null"] }
+
+    ReasoningItem:
+      type: object
+      required: [id, position, type, prompt]
+      properties:
+        id: { type: integer }
+        position: { type: integer }
+        type:
+          type: string
+          enum: [dilemma, mcq]
+        prompt: { type: string }
+        options:
+          type: ["array", "null"]
+          items: { type: string }
+          description: For mcq items — the answer choices.
+        decisionOptions:
+          type: ["array", "null"]
+          items: { type: string }
+          description: For dilemma items — the possible decisions on the scenario.
+        considerations:
+          type: ["array", "null"]
+          items: { type: string }
+          description: For dilemma items — statements to rate by importance and rank.
+        rankCount:
+          type: ["integer", "null"]
+          description: For dilemma items — how many top considerations to rank.
+
+    ReasoningAssessment:
+      type: object
+      required: [id, instrument, phase, title, instructions, items]
+      properties:
+        id: { type: integer }
+        instrument:
+          type: string
+          enum: [ethical, critical]
+        phase:
+          type: string
+          enum: [baseline, unit1, unit2, unit3, unit4]
+        title: { type: string }
+        subtitle: { type: ["string", "null"] }
+        instructions: { type: string }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReasoningItem"
+
+    ReasoningAttemptState:
+      type: object
+      required: [id, assessmentId, status, startedAt]
+      properties:
+        id: { type: integer }
+        assessmentId: { type: integer }
+        status:
+          type: string
+          enum: [in_progress, submitted]
+        startedAt: { type: string, format: date-time }
+        submittedAt: { type: ["string", "null"], format: date-time }
+        passed: { type: ["boolean", "null"] }
+        feedback: { type: ["string", "null"] }
+
+    ReasoningResponseInput:
+      type: object
+      required: [itemId]
+      properties:
+        itemId: { type: integer }
+        selectedIndex:
+          type: ["integer", "null"]
+          description: mcq — chosen option index.
+        decisionIndex:
+          type: ["integer", "null"]
+          description: dilemma — chosen decision index.
+        ratings:
+          type: ["array", "null"]
+          items: { type: integer }
+          description: dilemma — importance rating (0-4) per consideration, by index.
+        ranking:
+          type: ["array", "null"]
+          items: { type: integer }
+          description: dilemma — consideration indices ranked most-important first.
+
+    SubmitReasoningBody:
+      type: object
+      required: [responses]
+      properties:
+        responses:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReasoningResponseInput"
+
+    ReasoningMetric:
+      type: object
+      required: [label, value]
+      properties:
+        label: { type: string }
+        value: { type: string }
+        detail: { type: ["string", "null"] }
+
+    ReasoningResult:
+      type: object
+      required: [attemptId, passed, feedback, headline, metrics]
+      properties:
+        attemptId: { type: integer }
+        passed: { type: boolean }
+        feedback: { type: string }
+        headline: { type: string }
+        metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReasoningMetric"
+
+    GradeComponent:
+      type: object
+      required: [key, label, weightPercent, earnedPercent, detail]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        weightPercent: { type: number }
+        earnedPercent: { type: number }
+        detail: { type: string }
+
+    GradebookCourseworkItem:
+      type: object
+      required: [id, kind, title, weekNumber, status]
+      properties:
+        id: { type: integer }
+        kind:
+          type: string
+          enum: [homework, test, midterm, final]
+        title: { type: string }
+        weekNumber: { type: integer }
+        status:
+          type: string
+          enum: [not_started, in_progress, submitted]
+        bestScore: { type: ["number", "null"] }
+
+    GradebookReasoningItem:
+      type: object
+      required: [id, instrument, phase, title, status]
+      properties:
+        id: { type: integer }
+        instrument:
+          type: string
+          enum: [ethical, critical]
+        phase:
+          type: string
+          enum: [baseline, unit1, unit2, unit3, unit4]
+        title: { type: string }
+        status:
+          type: string
+          enum: [not_started, in_progress, passed]
+
+    Gradebook:
+      type: object
+      required: [overallPercent, letterGrade, components, coursework, reasoning]
+      properties:
+        overallPercent: { type: number }
+        letterGrade: { type: string }
+        components:
+          type: array
+          items:
+            $ref: "#/components/schemas/GradeComponent"
+        coursework:
+          type: array
+          items:
+            $ref: "#/components/schemas/GradebookCourseworkItem"
+        reasoning:
+          type: array
+          items:
+            $ref: "#/components/schemas/GradebookReasoningItem"

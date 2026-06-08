@@ -27,6 +27,9 @@ import LectureView from "@/pages/LectureView";
 import AssignmentRunner from "@/pages/AssignmentRunner";
 import Diagnostics from "@/pages/Diagnostics";
 import TopicPractice from "@/pages/TopicPractice";
+import Reasoning from "@/pages/Reasoning";
+import ReasoningRunner from "@/pages/ReasoningRunner";
+import Grades from "@/pages/Grades";
 
 // Resolves the key from window.location.hostname so the same build serves
 // multiple Clerk custom domains. Do not inline the env var or leave undefined.
@@ -187,6 +190,12 @@ function Router() {
         component={protectedComponent(AssignmentRunner)}
       />
       <Route path="/analytics" component={protectedComponent(Analytics)} />
+      <Route path="/reasoning" component={protectedComponent(Reasoning)} />
+      <Route
+        path="/reasoning/:id"
+        component={protectedComponent(ReasoningRunner)}
+      />
+      <Route path="/grades" component={protectedComponent(Grades)} />
       <Route path="/diagnostics" component={protectedComponent(Diagnostics)} />
       <Route
         path="/weeks/:weekNumber"
