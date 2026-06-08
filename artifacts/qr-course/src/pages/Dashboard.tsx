@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
+import { ReasoningCallout } from "@/components/ReasoningCallout";
 
 export default function Dashboard() {
   const { data: overview, isLoading: isLoadingOverview } = useGetCourseOverview();
@@ -19,6 +20,8 @@ export default function Dashboard() {
           </h1>
           <p className="text-muted-foreground">Welcome to your Ethics course workspace.</p>
         </div>
+
+        <ReasoningCallout phase="baseline" />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>

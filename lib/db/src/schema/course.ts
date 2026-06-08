@@ -177,3 +177,22 @@ export const diagnosticAttemptsTable = pgTable("diagnostic_attempts", {
   startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
   submittedAt: timestamp("submitted_at", { withTimezone: true }),
 });
+
+// Per-item responses for a submitted attempt. The full response set is also
+// stored as JSON on the attempt for convenience, but this normalized table
+// keeps one row per answered item so responses can be queried per item.
+// Rows cascade-delete with their parent attempt (and with the item).
+export const diagnosticResponsesTable = pgTable("diagnostic_responses", {
+  id: serial("id").primaryKey(),
+  attemptId: integer("attempt_id")
+    .notNull()
+    .references(() => diagnosticAttemptsTable.id, { onDelete: "cascade" }),
+  itemId: integer("item_id")
+    .notNull()
+    .references(() => diagnosticItemsTable.id, { onDelete: "cascade" }),
+  selectedIndex: integer("selected_index"), // mcq — chosen option index
+  decisionIndex: integer("decision_index"), // dilemma — chosen decision index
+  ratings: jsonb("ratings"), // dilemma — importance rating per consideration
+  ranking: jsonb("ranking"), // dilemma — consideration indices, most-important first
+  isCorrect: boolean("is_correct"), // mcq only — null for dilemma items
+});

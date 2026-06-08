@@ -5,7 +5,7 @@ import {
   assignmentsTable,
   problemsTable,
 } from "@workspace/db";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { logger } from "./logger";
 
 type SeedTopic = {
@@ -883,6 +883,116 @@ const ASSIGNMENTS: SeedAssignment[] = [
     ],
   },
 ];
+
+// ---------------------------------------------------------------------------
+// "Teaching to the test" primers — concise lecture material that prepares
+// students for the two embedded diagnostic instruments (Ethical Reasoning and
+// Critical Reasoning). Seeded idempotently by slug so they are added to both
+// fresh and already-populated databases without wiping student progress.
+// ---------------------------------------------------------------------------
+
+const REASONING_PRIMERS: SeedTopic[] = [
+  {
+    slug: "reasoning-primer-ethical",
+    title: "How to reason about moral dilemmas",
+    weekNumber: 1,
+    blurb:
+      "Assessment primer: weighing considerations and reasoning beyond convention.",
+    lectureTitle: "Primer: How to reason about moral dilemmas",
+    body: `# How to reason about moral dilemmas
+
+This short primer prepares you for the **Ethical Reasoning** diagnostic. That instrument does not ask for the "right" answer — it asks *which considerations you give weight to* when you decide. Here is the method it rewards.
+
+## A dilemma is a clash of considerations
+
+A genuine moral dilemma is a situation where several real considerations pull in different directions: a promise made, a harm threatened, a fair procedure, a person's wellbeing. Reasoning well does not mean ignoring the considerations you act against — it means being honest that they had weight, and saying why other considerations outweighed them. (Recall from Unit 2 that **outweighing is not canceling**: a reason you act against still counted.)
+
+## Three levels of consideration
+
+When you justify a decision, the *kind* of reason you appeal to matters:
+
+- **Personal-interest reasons** — what is easiest, safest, or most rewarding *for the decider*. ("It would be awkward to report it.")
+- **Maintaining-norms reasons** — what the rules, the law, or one's role formally require. ("Company policy says to.") These keep order, but a rule can itself be unjust.
+- **Principle-based reasons** — appeals to rights, fairness, and the impartial good of *everyone affected*, justifiable to any reasonable person. ("Each person affected deserves an explanation they could accept.")
+
+The diagnostic's **principled-reasoning index** rises when you give the most weight to principle-based considerations rather than to convenience or to "because that's the rule."
+
+## How to take the instrument well
+
+1. **Decide the action** the person should take.
+2. **Rate every consideration** by how much it actually weighed on you — be honest, not strategic.
+3. **Rank your top few.** Ranking is where you say what *most* drove the decision.
+4. **Read each consideration carefully.** Some are deliberately hollow or jargon-filled and reward nothing; ranking one high is a reliability flag.
+
+There is no penalty for the action you choose. What is measured is the *quality of the reasons* you stand behind.`,
+  },
+  {
+    slug: "reasoning-primer-critical",
+    title: "Core critical-thinking skills",
+    weekNumber: 1,
+    blurb:
+      "Assessment primer: analysis, inference, evaluation, deduction, and induction.",
+    lectureTitle: "Primer: Core critical-thinking skills",
+    body: `# Core critical-thinking skills
+
+This short primer prepares you for the **Critical Reasoning** diagnostic — a set of multiple-choice items that test five distinct reasoning skills. Knowing what each skill *is* helps you see what a question is really asking.
+
+## The five skills
+
+- **Analysis** — break an argument into parts: identify its **conclusion**, its stated **premises**, and any **unstated assumption** it depends on. Ask: "What is this arguing *for*, and what does it take for granted?"
+- **Inference** — work out what *follows* from given information, and how strongly. Distinguish what must be true, what is likely, and what is merely possible.
+- **Evaluation** — judge how much support the reasons actually give the conclusion. Spot when evidence is irrelevant, a source is unreliable, or a step does not connect.
+- **Deduction** — reason where a true set of premises *guarantees* the conclusion. In a valid deduction, the conclusion cannot be false if the premises are true. Watch for invalid forms (e.g. affirming the consequent).
+- **Induction** — reason from evidence or examples to a *probable* generalization or prediction. Good induction has a large, representative sample; weak induction over-generalizes from too little.
+
+## A recurring trap: stated vs. assumed vs. plausible
+
+Most wrong answers are statements that are *plausible* or *true in the real world* but are **not actually supported by the argument given**. The discipline this instrument rewards is the one from Unit 1: keep apart what is **stated**, what is **assumed**, and what only *sounds* reasonable. A strong answer follows from the reasons on the page — nothing more.
+
+## How to take the instrument well
+
+1. Find the **conclusion** first, then the premises.
+2. Ask which of the five skills the question targets (an assumption question is analysis; a "what follows" question is inference or deduction; a "how good is this reasoning" question is evaluation).
+3. Choose the option that follows **only** from what is given — not the one that is merely true or appealing.`,
+  },
+];
+
+// Insert any teaching-to-the-test primer lectures whose slug is not yet present.
+// Safe to run on every boot: it only adds what is missing.
+export async function seedReasoningPrimersIfMissing(): Promise<void> {
+  let added = 0;
+  for (let i = 0; i < REASONING_PRIMERS.length; i++) {
+    const t = REASONING_PRIMERS[i]!;
+    const existing = await db
+      .select({ id: topicsTable.id })
+      .from(topicsTable)
+      .where(eq(topicsTable.slug, t.slug));
+    if (existing.length > 0) continue;
+    const [inserted] = await db
+      .insert(topicsTable)
+      .values({
+        slug: t.slug,
+        title: t.title,
+        weekNumber: t.weekNumber,
+        blurb: t.blurb,
+        position: 900 + i,
+      })
+      .returning();
+    if (!inserted) throw new Error(`Failed to insert primer ${t.slug}`);
+    await db.insert(lecturesTable).values({
+      topicId: inserted.id,
+      weekNumber: t.weekNumber,
+      title: t.lectureTitle,
+      body: t.body,
+    });
+    added += 1;
+  }
+  if (added > 0) {
+    logger.info({ added }, "Reasoning primers seeded");
+  } else {
+    logger.info("Reasoning primers: already present, skipping");
+  }
+}
 
 export async function seedIfEmpty(): Promise<void> {
   const existing = await db.execute(sql`select count(*)::int as n from topics`);

@@ -7,6 +7,7 @@ import {
   diagnosticAssessmentsTable,
   diagnosticItemsTable,
   diagnosticAttemptsTable,
+  diagnosticResponsesTable,
 } from "@workspace/db";
 import {
   ListReasoningAssessmentsResponse,
@@ -253,6 +254,35 @@ router.post("/reasoning/assessments/:assessmentId/submit", async (req, res): Pro
       return;
     }
     attemptId = created.id;
+  }
+
+  // Persist one normalized row per answered item (replacing any prior rows for
+  // this attempt). isCorrect is set for mcq items, left null for dilemmas.
+  await db
+    .delete(diagnosticResponsesTable)
+    .where(eq(diagnosticResponsesTable.attemptId, attemptId));
+  const byItem = new Map(responses.map((r) => [r.itemId, r]));
+  const rows = items.map((item) => {
+    const resp = byItem.get(item.id);
+    let isCorrect: boolean | null = null;
+    if (item.type === "mcq") {
+      const sc = item.scoring as { correctIndex?: number };
+      isCorrect =
+        typeof resp?.selectedIndex === "number" &&
+        resp.selectedIndex === sc.correctIndex;
+    }
+    return {
+      attemptId,
+      itemId: item.id,
+      selectedIndex: resp?.selectedIndex ?? null,
+      decisionIndex: resp?.decisionIndex ?? null,
+      ratings: resp?.ratings ?? null,
+      ranking: resp?.ranking ?? null,
+      isCorrect,
+    };
+  });
+  if (rows.length > 0) {
+    await db.insert(diagnosticResponsesTable).values(rows);
   }
 
   res.json(

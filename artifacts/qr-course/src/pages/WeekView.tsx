@@ -5,6 +5,9 @@ import { useParams, Link } from "wouter";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookOpen } from "lucide-react";
+import { ReasoningCallout } from "@/components/ReasoningCallout";
+
+const UNIT_PHASES = ["unit1", "unit2", "unit3", "unit4"] as const;
 
 export default function WeekView() {
   const params = useParams();
@@ -88,6 +91,10 @@ export default function WeekView() {
             </div>
           )}
         </div>
+
+        {!isLoading && weekNumber >= 1 && weekNumber <= 4 && (
+          <ReasoningCallout phase={UNIT_PHASES[weekNumber - 1]} />
+        )}
       </div>
     </Layout>
   );
