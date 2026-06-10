@@ -51,3 +51,18 @@ jsonb. An UNANSWERED MCQ (no selectedIndex) must report `isCorrect: null`, NOT
 `false` — submit validation does not force every item answered, and partial/
 historical responses exist, so treating "no answer" as "incorrect" mislabels it.
 The UI renders null as a neutral "No answer" badge, true=green, false=red.
+
+**Grade on actual correctness, not the stored answer key.** Correctness is
+judged by the model on the merits; stored keys/model answers are only fallible
+hints it can override. For MCQ (critical) assessments, `judgeCritical()` makes
+one batched LLM call at submit to pick the genuinely-correct option per item
+(falls back to stored `correctIndex` on failure/invalid index). The judged map
+must drive ALL THREE grading surfaces in lockstep — `scoreSummary`
+headline/metrics, the `review[]`, AND the persisted `diagnostic_responses.is_correct`
+rows — or analytics will disagree with the results screen. Judged answers are
+persisted in `scoreSummary.correctByItem` so revisit rebuilds review without
+re-judging. Written grading (`gradeAnswer`/`gradePracticeEssay`) carries the
+same fallible-hint framing. Ethical-dilemma instrument is a values inventory,
+not a correctness test — left untouched.
+**Why:** stored keys can be wrong, and partial updates leave one surface on the
+old key behavior (an architect-caught regression).

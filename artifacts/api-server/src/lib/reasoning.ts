@@ -31,6 +31,10 @@ export interface ScoreSummary {
   instrument: "ethical" | "critical";
   headline: string;
   metrics: ReasoningMetric[];
+  // For critical (MCQ) assessments: the model-judged correct option index per
+  // item id, determined independently rather than from the stored answer key.
+  // Persisted so a later review shows the same judged answers.
+  correctByItem?: Record<number, number>;
 }
 
 interface McqScoring {
@@ -60,19 +64,24 @@ const SKILL_LABELS: Record<SkillArea, string> = {
 function scoreCritical(
   items: DiagnosticItemRow[],
   responses: ResponseInput[],
+  judged: Map<number, number>,
 ): ScoreSummary {
   const byItem = new Map(responses.map((r) => [r.itemId, r]));
   let correct = 0;
   const total = items.length;
   const perSkill = new Map<SkillArea, { correct: number; total: number }>();
+  const correctByItem: Record<number, number> = {};
 
   for (const item of items) {
     const scoring = item.scoring as McqScoring;
     const skill = scoring.skillArea;
     const bucket = perSkill.get(skill) ?? { correct: 0, total: 0 };
     bucket.total += 1;
+    // Use the model-judged correct option; fall back to the stored key.
+    const correctIndex = judged.get(item.id) ?? scoring.correctIndex;
+    correctByItem[item.id] = correctIndex;
     const resp = byItem.get(item.id);
-    if (resp && resp.selectedIndex === scoring.correctIndex) {
+    if (resp && resp.selectedIndex === correctIndex) {
       correct += 1;
       bucket.correct += 1;
     }
@@ -93,7 +102,59 @@ function scoreCritical(
     instrument: "critical",
     headline: `You answered ${correct} of ${total} correctly (${percent}%).`,
     metrics,
+    correctByItem,
   };
+}
+
+// Independently determine the genuinely correct option for each MCQ, using the
+// model's own reasoning rather than trusting the stored answer key. The stored
+// key is passed only as a fallible hint. Returns a map of item id -> correct
+// option index; on any failure it falls back to the stored key per item.
+export async function judgeCritical(
+  items: DiagnosticItemRow[],
+): Promise<Map<number, number>> {
+  const result = new Map<number, number>();
+  const mcq = items.filter((it) => it.type === "mcq");
+  for (const it of mcq) {
+    result.set(it.id, (it.scoring as McqScoring).correctIndex);
+  }
+  if (mcq.length === 0) return result;
+
+  try {
+    const out = await chatJson<{
+      answers: { id: number; correctIndex: number }[];
+    }>(
+      [
+        "You are an expert in critical reasoning, logic, and argument analysis. For each multiple-choice question, determine which single option is GENUINELY correct, reasoning from first principles.",
+        "A `hint_index` is provided per question — it is the answer key currently stored in the system, but it MAY BE WRONG. Treat it only as a fallible hint; if your own analysis shows a different option is correct, return that index instead.",
+        "Return exactly one 0-based option index per question id.",
+        'Output strict JSON {"answers": [{"id": number, "correctIndex": number}]} with one entry for every question id provided.',
+      ].join("\n"),
+      JSON.stringify({
+        questions: mcq.map((it) => ({
+          id: it.id,
+          question: it.prompt,
+          options: (it.payload as { options: string[] }).options,
+          hint_index: (it.scoring as McqScoring).correctIndex,
+        })),
+      }),
+    );
+    for (const a of out.answers ?? []) {
+      const item = mcq.find((it) => it.id === a.id);
+      if (!item) continue;
+      const optCount = (item.payload as { options: string[] }).options.length;
+      if (
+        typeof a.correctIndex === "number" &&
+        a.correctIndex >= 0 &&
+        a.correctIndex < optCount
+      ) {
+        result.set(a.id, a.correctIndex);
+      }
+    }
+  } catch (err) {
+    logger.warn({ err }, "judgeCritical failed; falling back to stored keys");
+  }
+  return result;
 }
 
 // --- Ethical reasoning (DIT-style) scoring --------------------------------
@@ -180,10 +241,11 @@ export function scoreAssessment(
   instrument: "ethical" | "critical",
   items: DiagnosticItemRow[],
   responses: ResponseInput[],
+  judged?: Map<number, number>,
 ): ScoreSummary {
   return instrument === "ethical"
     ? scoreEthical(items, responses)
-    : scoreCritical(items, responses);
+    : scoreCritical(items, responses, judged ?? new Map());
 }
 
 // --- Written feedback (AI with deterministic fallback) --------------------
@@ -454,6 +516,7 @@ export interface ReviewItem {
 export function buildReview(
   items: DiagnosticItemRow[],
   responses: ResponseInput[],
+  judged?: Map<number, number>,
 ): ReviewItem[] {
   const byItem = new Map(responses.map((r) => [r.itemId, r]));
   return items.map((item) => {
@@ -461,6 +524,8 @@ export function buildReview(
     if (item.type === "mcq") {
       const payload = item.payload as { options: string[] };
       const scoring = item.scoring as McqScoring;
+      // The correct option is the model-judged one; fall back to stored key.
+      const correctIndex = judged?.get(item.id) ?? scoring.correctIndex;
       const selectedIndex =
         typeof resp?.selectedIndex === "number" ? resp.selectedIndex : null;
       return {
@@ -469,9 +534,9 @@ export function buildReview(
         prompt: item.prompt,
         options: payload.options,
         selectedIndex,
-        correctIndex: scoring.correctIndex,
+        correctIndex,
         isCorrect:
-          selectedIndex === null ? null : selectedIndex === scoring.correctIndex,
+          selectedIndex === null ? null : selectedIndex === correctIndex,
         decisionOptions: null,
         decisionIndex: null,
         considerations: null,

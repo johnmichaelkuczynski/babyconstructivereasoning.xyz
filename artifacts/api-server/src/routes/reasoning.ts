@@ -20,6 +20,7 @@ import {
 } from "@workspace/api-zod";
 import {
   scoreAssessment,
+  judgeCritical,
   generateFeedback,
   generateVariantItems,
   buildReview,
@@ -225,6 +226,14 @@ router.post("/reasoning/assessments/:assessmentId/start", async (req, res): Prom
     const storedResponses = reviewed
       ? ((reusable.responses as ResponseInput[] | null) ?? [])
       : [];
+    // Reuse the model-judged correct answers persisted at submit time so the
+    // review shows the same answers it was graded against (no re-judging).
+    const judged = new Map<number, number>(
+      Object.entries(summary?.correctByItem ?? {}).map(([k, v]) => [
+        Number(k),
+        v as number,
+      ]),
+    );
     res.json(
       StartReasoningAttemptResponse.parse({
         id: reusable.id,
@@ -236,7 +245,7 @@ router.post("/reasoning/assessments/:assessmentId/start", async (req, res): Prom
         feedback: reusable.feedback,
         headline: summary?.headline ?? null,
         metrics: (summary?.metrics as ReasoningMetric[] | undefined) ?? null,
-        review: reviewed ? buildReview(items, storedResponses) : null,
+        review: reviewed ? buildReview(items, storedResponses, judged) : null,
         items: items.map(publicItem),
       }),
     );
@@ -315,7 +324,12 @@ router.post("/reasoning/assessments/:assessmentId/submit", async (req, res): Pro
     ? await loadItemsForAttempt(id, target.id)
     : await loadTemplateItems(id);
   const instrument = a.instrument as Instrument;
-  const summary = scoreAssessment(instrument, items, responses);
+  // For MCQ (critical) assessments, judge the genuinely correct option with the
+  // model rather than trusting the stored answer key. Both scoring and the
+  // per-question review use these judged answers.
+  const judged =
+    instrument === "critical" ? await judgeCritical(items) : new Map<number, number>();
+  const summary = scoreAssessment(instrument, items, responses, judged);
   const feedback = await generateFeedback(instrument, a.title, summary);
 
   // Pass/Fail policy: submitting the assessment is a pass.
@@ -366,9 +380,12 @@ router.post("/reasoning/assessments/:assessmentId/submit", async (req, res): Pro
     let isCorrect: boolean | null = null;
     if (item.type === "mcq") {
       const sc = item.scoring as { correctIndex?: number };
+      // Grade against the model-judged correct option (same source as scoring
+      // and review), falling back to the stored key only if unjudged.
+      const correctIndex = judged.get(item.id) ?? sc.correctIndex;
       isCorrect =
         typeof resp?.selectedIndex === "number" &&
-        resp.selectedIndex === sc.correctIndex;
+        resp.selectedIndex === correctIndex;
     }
     return {
       attemptId,
@@ -391,7 +408,7 @@ router.post("/reasoning/assessments/:assessmentId/submit", async (req, res): Pro
       feedback,
       headline: summary.headline,
       metrics: summary.metrics,
-      review: buildReview(items, responses),
+      review: buildReview(items, responses, judged),
     }),
   );
 });
