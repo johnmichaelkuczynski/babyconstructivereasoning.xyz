@@ -60,7 +60,7 @@ export default function Landing() {
             <Search className="w-4 h-4" />
           </div>
           <span className="font-serif font-semibold text-lg tracking-tight">
-            Data Detective
+            Data Analytics for Children
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -160,7 +160,7 @@ export default function Landing() {
       </main>
 
       <footer className="border-t border-border px-6 py-6 text-center text-sm text-muted-foreground">
-        Data Detective — where the curriculum, the tutor, the grader, and the
+        Data Analytics for Children — where the curriculum, the tutor, the grader, and the
         integrity check all live in one room.
       </footer>
     </div>
