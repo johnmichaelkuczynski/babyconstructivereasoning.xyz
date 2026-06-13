@@ -21,12 +21,12 @@ export function Scene4() {
       transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
     >
       <motion.div 
-        className="text-[6vw] font-black tracking-tight leading-none text-center"
+        className="text-[5vw] font-black tracking-tight leading-none text-center"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={phase >= 1 ? { scale: 1, opacity: 1 } : { scale: 0.8, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 200, damping: 20 }}
       >
-        <span className="text-primary block mb-2">DATA ANALYTICS</span>
+        <span className="text-primary block mb-2">EVOLUTIONARY PSYCHOLOGY</span>
         <span className="text-white">FOR CHILDREN</span>
       </motion.div>
 
@@ -36,7 +36,7 @@ export function Scene4() {
         animate={phase >= 2 ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
         transition={{ duration: 0.8 }}
       >
-        <p>Ask the question. Notice the pattern. Tell the story.</p>
+        <p>Your mind has a history.</p>
       </motion.div>
 
       {/* Decorative stars */}

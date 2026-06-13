@@ -46,7 +46,7 @@ title = "QuantReason — App Blueprint"
 id = "gBlmXbiu3K5FNCNv2fX9f"
 uri = "file://README.md"
 type = "text"
-title = "Data Analytics for Children — README"
+title = "README — Evolutionary Psychology for Children"
 
 [[outputs]]
 id = "FqMnfCzm6r7Jw0r0ejNvV"
@@ -59,3 +59,9 @@ id = "7Gk126T-Bb4dRx8JdJ-dH"
 uri = "file://artifacts/course-promo/public/audio/bg_music.mp3"
 type = "audio"
 title = "background music"
+
+[[outputs]]
+id = "xwqMN58ueq6FTNmUIZXDo"
+uri = "file://artifacts/course-promo/YOUTUBE_DESCRIPTION.md"
+type = "text"
+title = "YouTube Description — Promo Video"

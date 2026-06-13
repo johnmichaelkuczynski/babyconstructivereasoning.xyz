@@ -22,13 +22,7 @@ export function Scene2() {
       exit={{ opacity: 0, x: '-50%', filter: 'blur(10px)' }}
       transition={{ type: 'spring', stiffness: 200, damping: 25 }}
     >
-      <div className="absolute inset-0 opacity-40">
-        <img 
-          src={`${import.meta.env.BASE_URL}images/data-shapes.png`} 
-          alt="shapes" 
-          className="w-full h-full object-cover" 
-        />
-      </div>
+      <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/40 via-bg-light to-bg-light" />
 
       <div className="relative z-10 w-full max-w-[80vw] h-[50vh]">
         {/* Phase 1: Asking */}
@@ -42,8 +36,7 @@ export function Scene2() {
           }
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
         >
-          <h2 className="text-[4vw] font-black text-secondary">Asking questions.</h2>
-          <div className="text-[6vw] font-black text-secondary/20 absolute -right-6 -top-6">?</div>
+          <h2 className="text-[4vw] font-black text-secondary">Built to survive.</h2>
         </motion.div>
 
         {/* Phase 2: Noticing */}
@@ -57,7 +50,7 @@ export function Scene2() {
           }
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
         >
-          <h2 className="text-[4vw] font-black text-primary">Noticing patterns.</h2>
+          <h2 className="text-[4vw] font-black text-primary">The logic of attraction.</h2>
           <div className="flex gap-2 mt-4">
             {[1, 2, 3].map(i => (
               <motion.div key={i} className="w-6 h-6 rounded-full bg-primary" 
@@ -78,7 +71,7 @@ export function Scene2() {
           }
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
         >
-          <h2 className="text-[5vw] font-black text-accent">Telling a story.</h2>
+          <h2 className="text-[4vw] font-black text-accent text-center">Why we cooperate<br/>(and fight).</h2>
         </motion.div>
       </div>
     </motion.div>

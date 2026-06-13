@@ -1,25 +1,25 @@
-# 🔎 Data Analytics for Children
+# 🧠 Evolutionary Psychology for Children
 
-**A Friendly, One-Unit Intro to Data Analytics That Teaches, Tutors, Drills, and Grades Itself — No Math, Coding, or Spreadsheets Required**
+**A Friendly, One-Unit Intro to Evolutionary Psychology That Teaches, Tutors, Drills, and Grades Itself — No Math, Coding, or Prior Science Required**
 
 ---
 
 ## 🧩 Overview
 
-**Data Analytics for Children** is a self-paced, single-user web course that delivers a friendly, plain-language introduction to data analytics — taught, tutored, drilled, and graded entirely by AI, with built-in academic-integrity enforcement. No math, coding, spreadsheets, SQL, or other technical skills required.
+**Evolutionary Psychology for Children** is a self-paced, single-user web course that delivers a friendly, plain-language introduction to evolutionary psychology — taught, tutored, drilled, and graded entirely by AI, with built-in academic-integrity enforcement. No math, coding, spreadsheets, or prior science required.
 
-It turns the everyday habit of *noticing, comparing, and counting* into one product: read each lesson at the depth you want, ask a tutor scoped to the exact section you're on, drill questions whose difficulty adapts to you in real time, and submit homework, a unit test, and a final that are AI-graded with feedback and screened for AI-generated answers.
+It turns one big idea — *that your mind has a history, and your everyday feelings are tools shaped to help your ancestors survive and connect* — into one product: read each lesson at the depth you want, ask a tutor scoped to the exact section you're on, drill questions whose difficulty adapts to you in real time, and submit homework, a unit test, and a final that are AI-graded with feedback and screened for AI-generated answers.
 
-The curriculum is one unit — **"Data Analytics for Everyone"** — across **6 connected topics**:
+The curriculum is one unit — **"Evolutionary Psychology for Everyone"** — across **6 connected topics**:
 
-1. **What is data, really?**
-2. **Spotting patterns**
-3. **Asking a good question**
-4. **Sorting, grouping, and counting**
-5. **Seeing the story**
-6. **From hunch to decision**
+1. **The mind has a history**
+2. **Built to survive** (cravings, fears, and beauty)
+3. **The logic of attraction**
+4. **Love, jealousy, and keeping a mate**
+5. **Why we cooperate**
+6. **Why we fight — and believe**
 
-Designed for **middle schoolers, curious adults wanting brief but meaningful exposure, instructors evaluating AI-taught coursework, and researchers studying AI academic integrity**, Data Analytics for Children pairs a real curriculum with two layers of AI-authorship detection — surfacing not just *whether* the writing looks AI-generated, but whether the *act of producing it* did.
+Designed for **middle schoolers, curious adults wanting brief but meaningful exposure, instructors evaluating AI-taught coursework, and researchers studying AI academic integrity**, Evolutionary Psychology for Children pairs a real curriculum with two layers of AI-authorship detection — surfacing not just *whether* the writing looks AI-generated, but whether the *act of producing it* did.
 
 ---
 
@@ -31,7 +31,7 @@ Designed for **middle schoolers, curious adults wanting brief but meaningful exp
 - **Adaptive Topic Practice** — Generated problem sets that move difficulty up after a streak and down after a miss, with an explanation on every answer. Per-session difficulty persists, so each drill picks up where the last one left off. Every question poses a concrete scenario and asks for a short reasoned answer — never one-word recall.
 - **AI-Graded Assignments** — Homework, the unit test, and the final are scored by an LLM grader that judges semantic equivalence to a model answer, returns per-problem correctness *plus* a written rationale, then rolls up to a percent score.
 - **Two-Layer AI Detection on Every Submission** — Each submitted answer is screened by both a static text classifier (GPTZero) and a behavioral keystroke-pattern detector. Each verdict ships with a human-readable rationale.
-- **Diagnostic Reasoning Assessments** — Two original reasoning instruments (**Professional Judgment**, dilemma-based on relatable everyday data scenarios; and **Critical Reasoning**, CCTST-style multiple-choice) run at baseline and after the unit, so end-of-course reasoning can be compared against the starting point. Together they count for 20% of the final grade.
+- **Diagnostic Reasoning Assessments** — Two original reasoning instruments (**Professional Judgment**, dilemma-based on relatable everyday scenarios; and **Critical Reasoning**, multiple-choice) run at baseline and after the unit, so end-of-course reasoning can be compared against the starting point. Together they count for 20% of the final grade.
 - **Math Keyboard Everywhere** — A symbol palette is available on every freeform input — answer boxes *and* the AI tutor — so any notation a student wants to reach for is one tap away.
 - **Live Analytics** — Dashboard KPIs (attempts, accuracy, streak), per-topic mastery percentages, and a recent-activity feed — so progress, weak spots, and momentum are all visible at a glance.
 - **Operator Diagnostics** — One-click self-tests verify the entire stack — database, OpenAI integration, GPTZero, the detection pipeline, answer-key quality, and the practice/grade loop — before you trust a session.
@@ -60,17 +60,17 @@ Designed for **middle schoolers, curious adults wanting brief but meaningful exp
 
 This project is a **pnpm monorepo** with path-routed artifacts behind a shared reverse proxy:
 
-- **`artifacts/qr-course`** — the student-facing web app (React + Vite), served at `/`. This is **Data Analytics for Children**.
+- **`artifacts/qr-course`** — the student-facing web app (React + Vite), served at `/`. This is **Evolutionary Psychology for Children**.
 - **`artifacts/api-server`** — the shared Express backend (lessons, tutor streaming, practice, grading, detection, diagnostics, analytics).
 - **`lib/api-spec`** — the OpenAPI source of truth plus generated React Query hooks and Zod schemas.
 - **`lib/db`** — the database schema and client (PostgreSQL via the project's `DATABASE_URL`).
-- **`artifacts/qr-course-demo`, `artifacts/diagnostics-demo`** — standalone demo-video artifacts that showcase the product.
+- **`artifacts/course-promo`, `artifacts/qr-course-demo`, `artifacts/diagnostics-demo`** — standalone demo/promo-video artifacts that showcase the product.
 
 ---
 
 ## 📊 Designed For
 
-- **Middle Schoolers & Curious Adults** — A complete, plain-language intro to data analytics with on-demand tutoring and adaptive practice — no instructor, math, or coding required.
+- **Middle Schoolers & Curious Adults** — A complete, plain-language intro to evolutionary psychology with on-demand tutoring and adaptive practice — no instructor, math, or coding required.
 - **Instructors & Curriculum Designers** — A working reference for what AI-taught, AI-graded, AI-detection-screened coursework actually looks like end-to-end.
 - **Academic-Integrity Researchers** — A live testbed for layered AI-authorship detection that combines text-based classification with behavioral keystroke evidence.
 - **Product & Engineering Teams** — A reference implementation of contract-first full-stack architecture, streaming AI UX, and self-diagnostic operator tooling in a Replit pnpm monorepo.
@@ -79,8 +79,8 @@ This project is a **pnpm monorepo** with path-routed artifacts behind a shared r
 
 ## 💡 Core Idea
 
-Data Analytics for Children reframes an AI-taught course as a *closed accountability loop*.
+Evolutionary Psychology for Children reframes an AI-taught course as a *closed accountability loop*.
 
 It doesn't just teach the material and grade the homework — it **teaches**, **tutors**, **drills**, **grades**, **detects misuse**, and **proves the whole pipeline still works** with a single click. The result is a self-paced course that students can actually trust to be fair, and that instructors can actually trust to be honest.
 
-**Data Analytics for Children — where the curriculum, the tutor, the grader, and the integrity check all live in one room.**
+**Evolutionary Psychology for Children — where the curriculum, the tutor, the grader, and the integrity check all live in one room.**
