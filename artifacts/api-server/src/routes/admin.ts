@@ -1,8 +1,14 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, problemsTable } from "@workspace/db";
-import { RunGraderLabResponse } from "@workspace/api-zod";
-import { gradeAnswer } from "../lib/grading";
+import {
+  RunGraderLabResponse,
+  UpdateCourseSettingsBody,
+  UpdateCourseSettingsResponse,
+} from "@workspace/api-zod";
+import { gradeWrittenPart } from "../lib/homeworkGrading";
+import type { WrittenRubric } from "../lib/homeworkContent/types";
+import { updateCourseSettings } from "../lib/settings";
 import { chatJson } from "../lib/ai";
 
 const router: IRouter = Router();
@@ -10,29 +16,30 @@ const router: IRouter = Router();
 interface GeneratedCase {
   label: string;
   kind: string;
-  expectedCorrect: boolean;
+  expectedCredit: number;
   answer: string;
 }
 
+// The grader lab audits the INVERTED CCR written grader: it generates a spread
+// of candidate student answers that span the credit scale and shows what
+// partial credit the live grader awards versus what a fair grader should.
 const GENERATION_SYSTEM = [
-  "You generate a test bench of candidate STUDENT answers so an administrator can audit how an AI (artificial intelligence) grader scores them.",
-  "You are given a QUESTION and its MODEL ANSWER. Produce a wide spread of candidate answers that probe the grader.",
+  "You generate a test bench of candidate STUDENT answers so an administrator can audit an AI grader for a course on Constructive Critical Reasoning (CCR).",
+  "In CCR the grader is INVERTED: the answer that commits to the RICHEST, most-falsifiable model the data supports earns top credit; a cautious 'we can't really conclude anything' dodge earns ZERO; florid-but-empty padding that binds no data earns LOW; and a bold claim the data actively DEFEATS earns zero.",
+  "You are given a QUESTION and a MODEL ANSWER (a fallible exemplar). Produce a wide spread of candidate answers that probe the grader.",
   "",
-  "`expectedCorrect` is what a FAIR grader — one that scores ONLY on substance / on whether the student supplied what the QUESTION asks for, and that completely ignores grammar, spelling, capitalization, sentence fragments, notes, shorthand, wording, and formatting — SHOULD return for that answer.",
+  "`expectedCredit` is the partial credit in [0,1] a FAIR inverted grader SHOULD award — judging ONLY on substance (yield + commitment/falsifiability, minus data-defeated overreach), never on grammar, spelling, length, or style.",
   "",
   "Generate at least these kinds (use the `kind` value shown):",
-  "- correct_full: correct content, polished complete sentences. expectedCorrect=true",
-  "- correct_fragment: correct content written as terse sentence fragments or notes. expectedCorrect=true",
-  "- correct_allcaps: correct content in ALL CAPS / shorthand / abbreviations. expectedCorrect=true",
-  "- correct_paraphrase: correct content phrased very differently or using a different example than the model answer. expectedCorrect=true",
-  "- correct_minimal_bonus_omitted: correctly answers exactly what the question asks but omits extra detail that is in the model answer yet NOT demanded by the question. expectedCorrect=true",
-  "- wrong_fluent: substantively WRONG but written as confident, well-formed complete sentences. expectedCorrect=false",
-  "- wrong_fragment: substantively WRONG, written as fragments. expectedCorrect=false",
-  "- missing_required: addresses the topic but fails to provide the key content the question actually requires. expectedCorrect=false",
-  "- off_topic: irrelevant / does not answer the question. expectedCorrect=false",
+  "- committed_rich: binds essentially all the data AND commits to a concrete falsifiable test/prediction. expectedCredit ~0.95",
+  "- committed_partial: commits to a real model but binds less of the data or names a weaker test. expectedCredit ~0.6",
+  "- minimal_but_committed: terse / fragmentary but names a concrete, checkable claim. expectedCredit ~0.5",
+  "- cautious_dodge: refuses to commit — 'it depends', 'we can't know', pure hedge. expectedCredit 0",
+  "- florid_empty: long, confident-sounding, elaborate, but binds no specific data and names no test. expectedCredit ~0.15",
+  "- data_defeated: commits boldly to a claim the supplied data actively contradicts / overreaches. expectedCredit 0",
   "",
   "Give each case a short human-readable `label`. Keep answers realistic and concise (1-4 sentences/fragments).",
-  'Output strict JSON: {"cases": [{"label": string, "kind": string, "expectedCorrect": boolean, "answer": string}]}.',
+  'Output strict JSON: {"cases": [{"label": string, "kind": string, "expectedCredit": number, "answer": string}]}.',
 ].join("\n");
 
 router.post("/admin/grader-lab", async (req, res): Promise<void> => {
@@ -44,6 +51,7 @@ router.post("/admin/grader-lab", async (req, res): Promise<void> => {
 
   let prompt = (body.prompt ?? "").trim();
   let correctAnswer = (body.correctAnswer ?? "").trim();
+  let rubric: WrittenRubric | null = null;
 
   if (body.problemId != null && Number.isFinite(body.problemId)) {
     const [p] = await db
@@ -56,6 +64,7 @@ router.post("/admin/grader-lab", async (req, res): Promise<void> => {
     }
     prompt = p.prompt;
     correctAnswer = p.correctAnswer;
+    rubric = (p.writtenRubric as WrittenRubric | null) ?? null;
   }
 
   if (!prompt || !correctAnswer) {
@@ -64,6 +73,15 @@ router.post("/admin/grader-lab", async (req, res): Promise<void> => {
       .json({ error: "provide problemId, or both prompt and correctAnswer" });
     return;
   }
+
+  // Build a rubric for grading. Fall back to using the model answer alone when
+  // the audited item has no stored written rubric (e.g. an MC-only item).
+  const gradingRubric: WrittenRubric = rubric ?? {
+    modelAnswer: correctAnswer,
+    yieldAnchors: [],
+    riskAnchors: [],
+    defeatedBy: [],
+  };
 
   let generated: GeneratedCase[] = [];
   try {
@@ -76,36 +94,45 @@ router.post("/admin/grader-lab", async (req, res): Promise<void> => {
     generated = [];
   }
 
-  // Always include a genuinely blank answer as a control.
+  // Always include a genuinely blank answer as a zero-credit control.
   generated.push({
     label: "Blank / no answer",
     kind: "blank",
-    expectedCorrect: false,
+    expectedCredit: 0,
     answer: "",
   });
 
   // Grade every candidate on substance only — no AI detection runs here.
   const cases = await Promise.all(
     generated.map(async (g) => {
-      const graded = await gradeAnswer({
+      const graded = await gradeWrittenPart({
         prompt,
-        correctAnswer,
+        rubric: gradingRubric,
         userAnswer: g.answer ?? "",
       });
-      const expectedCorrect = !!g.expectedCorrect;
+      const expectedCredit = Math.max(0, Math.min(1, Number(g.expectedCredit) || 0));
       return {
         label: g.label || g.kind || "case",
         kind: g.kind || "unknown",
-        expectedCorrect,
+        expectedCredit,
         answer: g.answer ?? "",
-        gradedCorrect: graded.correct,
+        credit: graded.credit,
         explanation: graded.explanation,
-        match: expectedCorrect === graded.correct,
       };
     }),
   );
 
   res.json(RunGraderLabResponse.parse({ prompt, correctAnswer, cases }));
+});
+
+router.put("/admin/settings", async (req, res): Promise<void> => {
+  const parsed = UpdateCourseSettingsBody.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const settings = await updateCourseSettings(parsed.data);
+  res.json(UpdateCourseSettingsResponse.parse(settings));
 });
 
 export default router;

@@ -40,7 +40,8 @@ export const GetCourseOverviewResponse = zod.object({
   "timeLimitMinutes": zod.number().nullish(),
   "status": zod.enum(['not_started', 'in_progress', 'submitted']),
   "bestScore": zod.number().nullish(),
-  "lastAttemptId": zod.number().nullish()
+  "lastAttemptId": zod.number().nullish(),
+  "chosenFormat": zod.union([zod.literal('mcq'),zod.literal('hybrid'),zod.literal('written'),zod.literal(null)]).nullish()
 }))
 })),
   "totals": zod.object({
@@ -81,7 +82,8 @@ export const GetWeekResponse = zod.object({
   "timeLimitMinutes": zod.number().nullish(),
   "status": zod.enum(['not_started', 'in_progress', 'submitted']),
   "bestScore": zod.number().nullish(),
-  "lastAttemptId": zod.number().nullish()
+  "lastAttemptId": zod.number().nullish(),
+  "chosenFormat": zod.union([zod.literal('mcq'),zod.literal('hybrid'),zod.literal('written'),zod.literal(null)]).nullish()
 }))
 })
 
@@ -170,7 +172,7 @@ export const ListTopicsResponse = zod.array(ListTopicsResponseItem)
 
 
 /**
- * @summary List all assignments (homeworks, tests, midterm, final)
+ * @summary List all section homeworks
  */
 export const ListAssignmentsResponseItem = zod.object({
   "id": zod.number(),
@@ -182,7 +184,8 @@ export const ListAssignmentsResponseItem = zod.object({
   "timeLimitMinutes": zod.number().nullish(),
   "status": zod.enum(['not_started', 'in_progress', 'submitted']),
   "bestScore": zod.number().nullish(),
-  "lastAttemptId": zod.number().nullish()
+  "lastAttemptId": zod.number().nullish(),
+  "chosenFormat": zod.union([zod.literal('mcq'),zod.literal('hybrid'),zod.literal('written'),zod.literal(null)]).nullish()
 })
 export const ListAssignmentsResponse = zod.array(ListAssignmentsResponseItem)
 
@@ -202,34 +205,71 @@ export const GetAssignmentResponse = zod.object({
   "isTimed": zod.boolean(),
   "timeLimitMinutes": zod.number().nullish(),
   "instructions": zod.string().nullish(),
-  "problems": zod.array(zod.object({
-  "id": zod.number(),
-  "position": zod.number(),
-  "prompt": zod.string(),
-  "topicId": zod.number(),
-  "topicTitle": zod.string().nullish(),
-  "hint": zod.string().nullish()
-}))
+  "formats": zod.array(zod.object({
+  "format": zod.enum(['mcq', 'hybrid', 'written']),
+  "itemCount": zod.number(),
+  "label": zod.string()
+})),
+  "status": zod.enum(['not_started', 'in_progress', 'submitted']),
+  "chosenFormat": zod.union([zod.literal('mcq'),zod.literal('hybrid'),zod.literal('written'),zod.literal(null)]).nullish(),
+  "lastAttemptId": zod.number().nullish(),
+  "bestScore": zod.number().nullish()
 })
 
 
 /**
- * @summary Start (or resume) an attempt on an assignment
+ * @summary List an assignment's problems across all formats (admin grader lab)
+ */
+export const ListAssignmentProblemsParams = zod.object({
+  "assignmentId": zod.coerce.number()
+})
+
+export const ListAssignmentProblemsResponseItem = zod.object({
+  "id": zod.number(),
+  "position": zod.number(),
+  "prompt": zod.string(),
+  "itemType": zod.enum(['mc', 'written', 'hybrid']),
+  "format": zod.enum(['mcq', 'hybrid', 'written'])
+})
+export const ListAssignmentProblemsResponse = zod.array(ListAssignmentProblemsResponseItem)
+
+
+/**
+ * @summary Start (or resume) the single attempt on an assignment in a chosen format
  */
 export const StartAssignmentAttemptParams = zod.object({
   "assignmentId": zod.coerce.number()
+})
+
+export const StartAssignmentAttemptBody = zod.object({
+  "format": zod.enum(['mcq', 'hybrid', 'written'])
 })
 
 export const StartAssignmentAttemptResponse = zod.object({
   "id": zod.number(),
   "assignmentId": zod.number(),
   "status": zod.enum(['in_progress', 'submitted']),
+  "format": zod.enum(['mcq', 'hybrid', 'written']),
   "startedAt": zod.coerce.date(),
   "submittedAt": zod.coerce.date().nullish(),
   "deadlineAt": zod.coerce.date().nullish(),
+  "problems": zod.array(zod.object({
+  "id": zod.number(),
+  "position": zod.number(),
+  "prompt": zod.string(),
+  "topicId": zod.number(),
+  "topicTitle": zod.string().nullish(),
+  "hint": zod.string().nullish(),
+  "itemType": zod.enum(['mc', 'written', 'hybrid']),
+  "format": zod.enum(['mcq', 'hybrid', 'written']),
+  "maxPoints": zod.number(),
+  "options": zod.array(zod.string()).nullish(),
+  "writtenPrompt": zod.string().nullish()
+})),
   "answers": zod.array(zod.object({
   "problemId": zod.number(),
   "answer": zod.string(),
+  "selectedIndex": zod.number().nullish(),
   "keystrokeCount": zod.number().nullish(),
   "eraseCount": zod.number().nullish()
 }))
@@ -247,12 +287,27 @@ export const GetAttemptResponse = zod.object({
   "id": zod.number(),
   "assignmentId": zod.number(),
   "status": zod.enum(['in_progress', 'submitted']),
+  "format": zod.enum(['mcq', 'hybrid', 'written']),
   "startedAt": zod.coerce.date(),
   "submittedAt": zod.coerce.date().nullish(),
   "deadlineAt": zod.coerce.date().nullish(),
+  "problems": zod.array(zod.object({
+  "id": zod.number(),
+  "position": zod.number(),
+  "prompt": zod.string(),
+  "topicId": zod.number(),
+  "topicTitle": zod.string().nullish(),
+  "hint": zod.string().nullish(),
+  "itemType": zod.enum(['mc', 'written', 'hybrid']),
+  "format": zod.enum(['mcq', 'hybrid', 'written']),
+  "maxPoints": zod.number(),
+  "options": zod.array(zod.string()).nullish(),
+  "writtenPrompt": zod.string().nullish()
+})),
   "answers": zod.array(zod.object({
   "problemId": zod.number(),
   "answer": zod.string(),
+  "selectedIndex": zod.number().nullish(),
   "keystrokeCount": zod.number().nullish(),
   "eraseCount": zod.number().nullish()
 }))
@@ -266,13 +321,15 @@ export const SaveAnswerParams = zod.object({
   "attemptId": zod.coerce.number()
 })
 
+export const saveAnswerBodyAnswerDefault = ``;
 export const saveAnswerBodyTraceBulkInsertCountDefault = 0;
 export const saveAnswerBodyTraceLongestBulkInsertCharsDefault = 0;
 export const saveAnswerBodyTraceRewriteSegmentsDefault = 0;
 
 export const SaveAnswerBody = zod.object({
   "problemId": zod.number(),
-  "answer": zod.string(),
+  "answer": zod.string().default(saveAnswerBodyAnswerDefault),
+  "selectedIndex": zod.number().nullish(),
   "trace": zod.object({
   "keystrokeCount": zod.number(),
   "eraseCount": zod.number(),
@@ -280,7 +337,7 @@ export const SaveAnswerBody = zod.object({
   "longestBulkInsertChars": zod.number().default(saveAnswerBodyTraceLongestBulkInsertCharsDefault),
   "rewriteSegments": zod.number().default(saveAnswerBodyTraceRewriteSegmentsDefault),
   "durationMs": zod.number()
-})
+}).optional()
 })
 
 export const SaveAnswerResponse = zod.object({
@@ -309,7 +366,11 @@ export const SubmitAttemptResponse = zod.object({
   "perProblem": zod.array(zod.object({
   "problemId": zod.number(),
   "correct": zod.boolean(),
+  "credit": zod.number(),
+  "maxPoints": zod.number(),
+  "itemType": zod.union([zod.literal('mc'),zod.literal('written'),zod.literal('hybrid'),zod.literal(null)]).nullish(),
   "userAnswer": zod.string().optional(),
+  "selectedIndex": zod.number().nullish(),
   "correctAnswer": zod.string().optional(),
   "explanation": zod.string()
 })),
@@ -339,12 +400,40 @@ export const RunGraderLabResponse = zod.object({
   "cases": zod.array(zod.object({
   "label": zod.string(),
   "kind": zod.string(),
-  "expectedCorrect": zod.boolean(),
+  "expectedCredit": zod.number(),
   "answer": zod.string(),
-  "gradedCorrect": zod.boolean(),
-  "explanation": zod.string(),
-  "match": zod.boolean()
+  "credit": zod.number(),
+  "explanation": zod.string()
 }))
+})
+
+
+/**
+ * @summary Get operator-tunable course settings (format point weights, min diagnostics)
+ */
+export const GetCourseSettingsResponse = zod.object({
+  "formatWeightMcq": zod.number(),
+  "formatWeightHybrid": zod.number(),
+  "formatWeightWritten": zod.number(),
+  "minDiagnostics": zod.number()
+})
+
+
+/**
+ * @summary Update operator-tunable course settings
+ */
+export const UpdateCourseSettingsBody = zod.object({
+  "formatWeightMcq": zod.number().nullish(),
+  "formatWeightHybrid": zod.number().nullish(),
+  "formatWeightWritten": zod.number().nullish(),
+  "minDiagnostics": zod.number().nullish()
+})
+
+export const UpdateCourseSettingsResponse = zod.object({
+  "formatWeightMcq": zod.number(),
+  "formatWeightHybrid": zod.number(),
+  "formatWeightWritten": zod.number(),
+  "minDiagnostics": zod.number()
 })
 
 
@@ -594,7 +683,7 @@ export const GenerateReportResponse = zod.object({
  */
 export const ListReasoningAssessmentsResponseItem = zod.object({
   "id": zod.number(),
-  "instrument": zod.enum(['subject', 'reasoning']),
+  "instrument": zod.enum(['ccr']),
   "phase": zod.enum(['before', 'third1', 'third2', 'after']),
   "title": zod.string(),
   "subtitle": zod.string().nullish(),
@@ -614,7 +703,7 @@ export const GetReasoningAssessmentParams = zod.object({
 
 export const GetReasoningAssessmentResponse = zod.object({
   "id": zod.number(),
-  "instrument": zod.enum(['subject', 'reasoning']),
+  "instrument": zod.enum(['ccr']),
   "phase": zod.enum(['before', 'third1', 'third2', 'after']),
   "title": zod.string(),
   "subtitle": zod.string().nullish(),
@@ -743,7 +832,7 @@ export const GetGradebookResponse = zod.object({
 })),
   "reasoning": zod.array(zod.object({
   "id": zod.number(),
-  "instrument": zod.enum(['subject', 'reasoning']),
+  "instrument": zod.enum(['ccr']),
   "phase": zod.enum(['before', 'third1', 'third2', 'after']),
   "title": zod.string(),
   "status": zod.enum(['not_started', 'in_progress', 'passed'])

@@ -1,88 +1,77 @@
-# 🤖 Baby AI
+# 🧭 Constructive Critical Reasoning
 
-**A Friendly, One-Unit Intro to Artificial Intelligence That Teaches, Tutors, Drills, and Grades Itself — No Math, Coding, or Prior Science Required**
+**A One-Unit Course That Trains You to Draw the Strongest Conclusion the Data Actually Supports — Taught, Tutored, Drilled, and Graded by AI**
 
 ---
 
 ## 🧩 Overview
 
-**Baby AI** is a self-paced, single-user web course that delivers a friendly, plain-language introduction to artificial intelligence — taught, tutored, drilled, and graded entirely by AI, with built-in academic-integrity enforcement. No math, coding, spreadsheets, or prior science required.
+Constructive Critical Reasoning (CCR) is a self-paced, single-user web course that teaches the discipline of **committing to the richest, most-falsifiable conclusion a body of evidence will bear** — the opposite of reflexive skepticism. No math, coding, or technical background required.
 
-It turns one big idea — *that modern AI is a pattern-finding machine that learns from data and predicts likely answers, not a thinking, all-knowing mind* — into one product: read each lesson at the depth you want, ask a tutor scoped to the exact section you're on, drill questions whose difficulty adapts to you in real time, and submit homework, a unit test, and a final that are AI-graded with feedback and screened for AI-generated answers.
+CCR inverts the usual grading instinct. Most "critical thinking" rewards caution: the more hedged the answer, the safer it feels. Here, hedging is the failure mode. The **richest, most-falsifiable, most-committed model earns top credit**; the cautious *"you can't really conclude anything"* dodge earns near-zero; florid padding that binds no data scores low; and a bold claim the data actively defeats also earns zero. Every question rewards committing harder to the most, while exposing the cleanest disconfirming test.
 
-The curriculum is one unit — **"Baby AI for Everyone"** — across **8 connected topics**:
+The curriculum is organized into **one unit and 8 sections**: 1.1 The Fecund Lead; 1.2 Model Selection by Explanatory Yield; 1.3 Parsimony as a Live Constraint; 1.4 Abductive Commitment; 1.5 From Correlation to Mechanism; 1.6 The Anomaly Cluster; 1.7 The Cheap Decisive Test; and 1.8 Calibrated Boldness.
 
-1. **What AI is (and isn't)**
-2. **Rules vs. learning** (the two paradigms)
-3. **Data and training** (what "learning" actually means)
-4. **Pattern recognition** (the core idea behind it all)
-5. **Neural networks and deep learning**
-6. **Language models** (how AI predicts text, and what "generative" means)
-7. **Strengths, limits, and hallucination**
-8. **Using AI well, and where it's headed**
-
-Designed for **middle schoolers, curious adults wanting brief but meaningful exposure, instructors evaluating AI-taught coursework, and researchers studying AI academic integrity**, Baby AI pairs a real curriculum with two layers of AI-authorship detection — surfacing not just *whether* the writing looks AI-generated, but whether the *act of producing it* did.
+Designed for **middle schoolers, curious adults wanting brief but meaningful exposure, instructors evaluating AI-taught coursework, and researchers studying AI academic integrity**, CCR pairs a real curriculum with two layers of AI-authorship detection — surfacing not just *whether* the writing looks AI-generated, but whether the *act of producing it* did.
 
 ---
 
-## 🤖 What It Does
+## 🧠 What It Does
 
-- **One-Unit Structured Curriculum** — A complete plain-language intro syllabus across 8 topics, shipping with lessons, two homework sets, a timed unit test, and a cumulative final exam.
-- **Three-Depth Lessons** — Every lesson is available at **Short / Medium / Long** length, AI-rewritten while preserving the same examples and learning objectives. Skim the concept, expand it on demand, or read the deeper cut — and request a custom rewrite ("add more examples", "shorter sentences") when you want it your way.
-- **Section-Scoped AI Tutor** — Ask a question about the paragraph you're reading and the answer streams back token-by-token, grounded in that exact lecture section. Suggested starter questions are pre-generated per lecture, and the tutor stays available while you practice.
-- **Adaptive Topic Practice** — Generated problem sets that move difficulty up after a streak and down after a miss, with an explanation on every answer. Per-session difficulty persists, so each drill picks up where the last one left off. Every question poses a concrete scenario and asks for a short reasoned answer — never one-word recall.
-- **AI-Graded Assignments** — Homework, the unit test, and the final are scored by an LLM grader that judges semantic equivalence to a model answer, returns per-problem correctness *plus* a written rationale, then rolls up to a percent score.
-- **Two-Layer AI Detection on Every Submission** — Each submitted answer is screened by both a static text classifier (GPTZero) and a behavioral keystroke-pattern detector. Each verdict ships with a human-readable rationale.
-- **Diagnostic Reasoning Assessments** — Two original reasoning instruments (**Professional Judgment**, dilemma-based on relatable everyday scenarios; and **Critical Reasoning**, multiple-choice) run at baseline and after the unit, so end-of-course reasoning can be compared against the starting point. Together they count for 20% of the final grade.
-- **Math Keyboard Everywhere** — A symbol palette is available on every freeform input — answer boxes *and* the AI tutor — so any notation a student wants to reach for is one tap away.
-- **Live Analytics** — Dashboard KPIs (attempts, accuracy, streak), per-topic mastery percentages, and a recent-activity feed — so progress, weak spots, and momentum are all visible at a glance.
-- **Operator Diagnostics** — One-click self-tests verify the entire stack — database, OpenAI integration, GPTZero, the detection pipeline, answer-key quality, and the practice/grade loop — before you trust a session.
-- **Google Sign-In** — Students sign in with Google (via Clerk) to keep their progress, attempts, and analytics tied to their account.
+- **One-Unit Structured Curriculum** — A complete plain-language reasoning syllabus across 8 sections. Each section ships with a lesson and one graded homework. There is no separate test, midterm, or final — homework is the graded model.
+- **Three-Depth Lessons** — Every lesson is available at **Short / Medium / Long** length, AI-rewritten while preserving the same examples and learning objectives.
+- **Section-Scoped AI Tutor** — Ask a question about the paragraph you're reading and the answer streams back token-by-token, grounded in that exact lecture section. Suggested starter questions are pre-generated per lecture.
+- **One Homework Per Section, Your Format** — Each section's homework is offered in three formats and you pick exactly one: **MCQ (long)**, **Hybrid (medium — multiple choice + short written)**, or **Written (short)**. You get a **single attempt** — it locks the moment you submit.
+- **Inverted Partial-Credit Grading** — MC option weights act as data (one zero-credit dodge foil, plus a descending gradient of live options); written answers are scored against a yield/risk rubric with a penalty for claims the data defeats; hybrid sums both parts. Every item returns a written rationale.
+- **Adaptive Topic Practice** — Generated scenario problem sets that move difficulty up after a streak and down after a miss, with explanations on every answer. Per-session difficulty persists.
+- **Two-Layer AI Detection on Every Submission** — Each submitted answer is screened by both a static text classifier (GPTZero) and a diachronic keystroke-pattern detector, each with a human-readable rationale.
+- **Four-Phase Diagnostic Assessments** — A single CCR reasoning instrument runs at four phases (baseline, two mid-course checkpoints, and after the unit) using a 3×3 menu of generated items, so reasoning growth can be tracked across the course. A configurable minimum-to-pass governs pass/fail.
+- **Live Analytics** — Dashboard KPIs (attempts, accuracy, streak), per-section mastery percentages, and a recent-activity feed.
+- **Operator Diagnostics** — One-click self-tests (system health and synthetic-student end-to-end run) verify the entire stack — database, OpenAI integration, GPTZero, detection pipeline, and the practice/grade loop.
+- **Built-In Product Demo Video** — A screencast of the live UI ships as its own deployable artifact, so the product can show itself.
 
 ---
 
 ## ⚙️ Technical Features
 
-- **Two-Layer AI-Authorship Detection**
-  - **Static (GPTZero):** Every submitted answer is sent to GPTZero; the per-document AI probability is blended with a structural heuristic for the final score. If GPTZero is unavailable, the system silently falls back to an LLM scorer plus heuristic — submissions never block.
-  - **Diachronic (Keystroke Pattern):** The student textarea captures keystroke count, erase count, bulk-insert events, longest bulk insert, rewrite segments, and total duration. A scorer penalizes paste-then-reword behavior, low keystroke-to-output ratios, and impossibly sustained typing speeds — catching AI use even when the final text is reworded enough to pass GPTZero. (Math-keyboard insertions count as real keystrokes, so legitimate symbol use never false-flags.)
-- **Diagnostic Self-Tests**
-  - **System Diagnostic** (`/diagnostics/system`): Ordered checks — environment, database round-trip, course-seed integrity, OpenAI chat completion, OpenAI JSON mode, detection pipeline, an AI-positive control sample, and GPTZero connectivity. Each step returns pass/fail, timing, and a raw error string.
-  - **Synthetic-Student Diagnostic** (`/diagnostics/synthetic-run`): Spins up a fake student, runs a practice session (wrong → adjust ↓ → right → adjust ↑), takes and submits a full assignment attempt, and verifies grading + detection + analytics all reflect the run. End-to-end stack proof in one click.
-  - **Quality-Control Diagnostic** (`/diagnostics/quality-control`): Uses OpenAI to verify that course answer keys are legitimate, judged against the course's own lecture text rather than generic knowledge.
-- **Contract-First API** — A single OpenAPI document is the source of truth; React Query hooks for the UI and Zod validators for the server are generated from it, so request and response shapes can't drift between client and server.
-- **Streaming AI Tutor** — Token-by-token Server-Sent-Event streaming with a section-scoped system prompt, so responses stay grounded in the lecture the student is reading.
-- **Adaptive Practice Engine** — Per-session difficulty (1–4 continuous) adjusts after each attempt; the next-problem generator takes the current difficulty and topic as input, so questions are generated on demand instead of pre-baked.
-- **Real-React Demo Video** — The product walkthrough is a real React app, not a slideshow: persistent sidebar, animated SVG cursor, character-by-character typing, word-by-word streaming responses, and scene-synced background audio — all exported as MP4 from a single browser tab.
-- **Operator Console** — A dedicated Diagnostics page surfaces the self-tests with one-click execution, per-step pass/fail rows, and raw error output for debugging.
-
----
-
-## 🏗️ Architecture
-
-This project is a **pnpm monorepo** with path-routed artifacts behind a shared reverse proxy:
-
-- **`artifacts/qr-course`** — the student-facing web app (React + Vite), served at `/`. This is **Baby AI**.
-- **`artifacts/api-server`** — the shared Express backend (lessons, tutor streaming, practice, grading, detection, diagnostics, analytics).
-- **`lib/api-spec`** — the OpenAPI source of truth plus generated React Query hooks and Zod schemas.
-- **`lib/db`** — the database schema and client (PostgreSQL via the project's `DATABASE_URL`).
-- **`artifacts/course-promo`, `artifacts/qr-course-demo`, `artifacts/diagnostics-demo`** — standalone demo/promo-video artifacts that showcase the product.
+- **Inverted Partial-Credit Grading Engine** —
+  - **MC / Hybrid MC part:** each option carries a stored weight in `[0,1]`. Exactly one option is a zero-credit dodge (a fallacy the data defeats, or a non-committal refusal); the rest form a descending gradient (richest/most-falsifiable = `1.0`, weaker commitment = `0.6`, timid partial = `0.3`). Credit is the chosen option's weight.
+  - **Written:** scored against a `{ modelAnswer, yieldAnchors, riskAnchors, defeatedBy }` rubric — credit rises with how much data the answer *binds* and how falsifiable a test it commits to, and falls for asserting claims the data defeats or for empty elaboration.
+  - **Hybrid:** averages the MC and written parts. Section percent rolls up per item, and the course aggregate honors **configurable format point values**.
+- **Two-Layer AI-Authorship Detection** —
+  - **Static (GPTZero):** every submitted answer is sent to GPTZero; the per-document AI probability is blended with a structural heuristic. If GPTZero is unavailable, the system falls back to an LLM scorer plus heuristic — submissions never block.
+  - **Diachronic (Keystroke Pattern):** the textarea captures keystroke count, erase count, bulk-insert events, longest bulk insert, rewrite segments, and total duration, penalizing paste-then-reword behavior, low keystroke-to-output ratios, and impossibly sustained typing speeds.
+- **Single-Attempt Lock** — Starting a homework records the chosen format; submitting locks the attempt. A second start on a submitted assignment is rejected (HTTP 409) and the UI shows the locked result.
+- **Diagnostic Self-Tests** —
+  - **System Diagnostic** (`/diagnostics/system`): ordered checks — environment, database round-trip, course-seed integrity, OpenAI chat completion, OpenAI JSON mode, detection pipeline, AI-positive control sample, and GPTZero connectivity.
+  - **Synthetic-Student Diagnostic** (`/diagnostics/synthetic-run`): spins up a fake student, runs a practice session, takes and submits a full homework attempt, and verifies grading + detection + analytics all reflect the run.
+- **Contract-First API** — A single OpenAPI document is the source of truth; React Query hooks for the UI and Zod validators for the server are generated from it, so request and response shapes can't drift.
+- **Streaming AI Tutor** — Token-by-token Server-Sent-Event streaming with a section-scoped system prompt so responses stay grounded in the lecture being read.
+- **Adaptive Practice Engine** — Per-session difficulty (1–4 continuous) adjusts after each attempt; the next-problem generator takes current difficulty and section as input.
+- **Real-React Demo Video** — The product walkthrough is a real React app exported as MP4 from a single browser tab.
+- **Living README** — This README plus a companion `BLUEPRINT.md` architecture document are kept in lock-step with the code.
 
 ---
 
 ## 📊 Designed For
 
-- **Middle Schoolers & Curious Adults** — A complete, plain-language intro to artificial intelligence with on-demand tutoring and adaptive practice — no instructor, math, or coding required.
-- **Instructors & Curriculum Designers** — A working reference for what AI-taught, AI-graded, AI-detection-screened coursework actually looks like end-to-end.
-- **Academic-Integrity Researchers** — A live testbed for layered AI-authorship detection that combines text-based classification with behavioral keystroke evidence.
-- **Product & Engineering Teams** — A reference implementation of contract-first full-stack architecture, streaming AI UX, and self-diagnostic operator tooling in a Replit pnpm monorepo.
+- **Middle Schoolers & Curious Adults:** A complete, plain-language course in reasoning toward the strongest supported conclusion — with on-demand tutoring and adaptive practice, no instructor required.
+- **Instructors & Curriculum Designers:** A working reference for what AI-taught, AI-graded, AI-detection-screened coursework looks like end-to-end.
+- **Academic-Integrity Researchers:** A live testbed for layered AI-authorship detection combining text classification with behavioral keystroke evidence.
+- **Product & Engineering Teams:** A reference implementation of contract-first full-stack architecture, streaming AI UX, and self-diagnostic operator tooling in a Replit pnpm monorepo.
 
 ---
 
 ## 💡 Core Idea
 
-Baby AI reframes an AI-taught course as a *closed accountability loop*.
+Constructive Critical Reasoning reframes "critical thinking" as a *constructive* act.
 
-It doesn't just teach the material and grade the homework — it **teaches**, **tutors**, **drills**, **grades**, **detects misuse**, and **proves the whole pipeline still works** with a single click. The result is a self-paced course that students can actually trust to be fair, and that instructors can actually trust to be honest.
+It doesn't reward the student for finding reasons to doubt — it rewards them for **committing to the richest model the evidence supports and naming the cleanest test that could prove them wrong.** The course teaches that, tutors it, drills it, grades it on an inverted partial-credit scale, screens submissions for misuse, and proves the whole pipeline still works with a single click.
 
-**Baby AI — where the curriculum, the tutor, the grader, and the integrity check all live in one room.**
+**Constructive Critical Reasoning — where the strongest honest conclusion, not the safest hedge, earns the grade.**
+
+---
+
+## 👤 User preferences
+
+- The user prefers to **convert the existing app in place** (e.g. replacing the prior course content/branding with the new subject) rather than create a standalone clone — keep all functionality and format intact when making content/branding changes.

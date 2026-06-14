@@ -4,7 +4,7 @@ import type { ReasoningAssessmentSummary } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { Sparkles, Brain, CheckCircle2 } from "lucide-react";
+import { Brain, CheckCircle2 } from "lucide-react";
 
 type Phase = "before" | "third1" | "third2" | "after";
 
@@ -26,13 +26,12 @@ const BLURBS: Record<Phase, string> = {
     "Take the practice checks one more time to see how far you've come. Practice only — never graded.",
 };
 
-function instrumentLabel(instrument: string): string {
-  return instrument === "subject" ? "AI Knowledge" : "General Reasoning";
+function instrumentLabel(_instrument: string): string {
+  return "Constructive Critical Reasoning";
 }
 
 function Row({ a }: { a: ReasoningAssessmentSummary }) {
-  const isSubject = a.instrument === "subject";
-  const Icon = isSubject ? Sparkles : Brain;
+  const Icon = Brain;
   const completed = a.status === "passed";
   return (
     <Link href={`/reasoning/${a.id}`}>
@@ -65,8 +64,7 @@ export function ReasoningCallout({ phase }: { phase: Phase }) {
   const items = (data ?? []).filter((a) => a.phase === phase);
   if (items.length === 0) return null;
 
-  const rank = (a: ReasoningAssessmentSummary) => (a.instrument === "subject" ? 0 : 1);
-  const sorted = items.slice().sort((x, y) => rank(x) - rank(y));
+  const sorted = items;
 
   return (
     <Card className="border-primary/30 bg-primary/5">

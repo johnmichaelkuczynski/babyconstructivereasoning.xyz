@@ -5,6 +5,8 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ProblemFormat } from './problemFormat';
+import type { ProblemItemType } from './problemItemType';
 
 export interface Problem {
   id: number;
@@ -15,4 +17,11 @@ export interface Problem {
   topicTitle?: string | null;
   /** @nullable */
   hint?: string | null;
+  itemType: ProblemItemType;
+  format: ProblemFormat;
+  maxPoints: number;
+  /** @nullable */
+  options?: string[] | null;
+  /** @nullable */
+  writtenPrompt?: string | null;
 }

@@ -9,6 +9,8 @@ import type { KeystrokeTrace } from './keystrokeTrace';
 
 export interface AnswerInput {
   problemId: number;
-  answer: string;
-  trace: KeystrokeTrace;
+  answer?: string;
+  /** @nullable */
+  selectedIndex?: number | null;
+  trace?: KeystrokeTrace;
 }

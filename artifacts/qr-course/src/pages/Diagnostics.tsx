@@ -180,7 +180,7 @@ export default function Diagnostics() {
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
                 Walks a synthetic student through the whole course: reads every lecture,
-                starts and submits every assignment (homework, tests, midterm, final), runs
+                starts and submits a section homework attempt, runs
                 adaptive practice, asks the AI tutor, and triggers AI + diachronic detection.
                 This exercises every endpoint a real student would touch and can take
                 several minutes (each grade and generation is an LLM call). The AI detector

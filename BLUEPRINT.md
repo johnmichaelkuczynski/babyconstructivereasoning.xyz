@@ -1,12 +1,12 @@
-# Baby AI — App Blueprint
+# Constructive Critical Reasoning — App Blueprint
 
-A complete architectural blueprint for the Baby AI one-unit introduction-to-AI course. This document is the single reference for what the app does, how it's wired, and the contracts between pieces. For day-to-day commands and gotchas see `replit.md`.
+A complete architectural blueprint for the Constructive Critical Reasoning (CCR) one-unit course. This document is the single reference for what the app does, how it's wired, and the contracts between pieces. For day-to-day commands and gotchas see `replit.md`.
 
 ---
 
 ## 1. Product summary
 
-Baby AI is a self-paced, single-user web course covering a friendly, plain-language introduction to artificial intelligence (one unit, "Baby AI for Everyone", across 8 topics — from what AI is, through pattern recognition, neural networks and language models, to using AI well). Students read AI-rewritten lecture notes at three lengths, ask an AI tutor scoped to the section they're reading, drill on adaptive practice problems, and submit homework / unit test / final that are AI-graded and AI-detection-screened.
+Constructive Critical Reasoning (CCR) is a self-paced, single-user web course that trains students to commit to the **richest, most-falsifiable conclusion a body of evidence supports** (one unit, 8 sections — from The Fecund Lead through Calibrated Boldness). Students read AI-rewritten lecture notes at three lengths, ask an AI tutor scoped to the section they're reading, drill on adaptive scenario practice, and submit **one homework per section** that is AI-graded on an **inverted partial-credit scale** and AI-detection-screened. Grading is the inverted core: the most-committed, most-testable model earns top credit; the cautious "you can't conclude anything" dodge earns near-zero. There is **no separate test, midterm, or final** — homework is the graded model.
 
 The product surface is three deployable artifacts in one pnpm monorepo:
 
@@ -32,9 +32,9 @@ Source: `lib/db/src/schema/course.ts`.
 ```
 topics ──< lectures              (one topic, one lecture per length)
 topics ──< problems              (problems tagged to a topic for analytics)
-assignments ──< problems         (homework / test / midterm / final)
+assignments ──< problems         (homework only; problems partitioned by format: mcq | hybrid | written)
 assignments ──< attempts ──< answers
-                                ↑ per-answer keystroke trace + AI scores
+                                ↑ per-answer keystroke trace + AI scores + per-item partial credit
 practice_sessions ──< practice_problems ──< practice_attempts
                                             ↑ adaptive difficulty session
 ```
@@ -44,6 +44,11 @@ Notable columns:
 - `lectures.body` / `body_medium` / `body_long` — the Short / Medium / Long toggle is three pre-baked LLM rewrites of the same lecture.
 - `answers.{keystrokeCount,eraseCount,bulkInsertCount,longestBulkInsertChars,rewriteSegments,durationMs}` — the **diachronic trace**. Captured client-side from the textarea and submitted with the answer.
 - `answers.{aiScore,aiFlagged,diachronicScore,diachronicFlagged,detectionRationale}` — frozen detection outcome at submission time.
+- `problems.{itemType,format}` — `itemType` is `mc | written | hybrid`; `format` (`mcq | hybrid | written`) partitions each assignment's problems so one homework offers three parallel format tracks.
+- `problems.mcOptions` (jsonb) — for MC / hybrid: each option carries a `credit` weight in `[0,1]`. Exactly one option is the zero-credit dodge; the rest form a descending gradient (`1.0 / 0.6 / 0.3`).
+- `problems.writtenRubric` (jsonb) — for written / hybrid: `{ modelAnswer, yieldAnchors[], riskAnchors[], defeatedBy[] }` drives inverted partial-credit scoring.
+- `attempts.format` — the single format the student locked in; `attempts.status` (`in_progress | submitted`) enforces the single-attempt lock.
+- `answers.{credit,maxPoints}` — per-item partial credit awarded by the inverted grader.
 - `practice_sessions.difficulty` (1–4, double) — adapts session-by-session based on streaks / accuracy.
 
 Push schema with `pnpm --filter @workspace/db run push`.
@@ -61,12 +66,12 @@ Tag groups and what they own:
 | `course` | `GET /course/overview`, `GET /course/weeks/{n}`, `GET /course/lectures/{id}` | Read the static course tree. Lectures return Short/Medium/Long bodies. |
 | `tutor` | `POST /tutor/ask` (SSE), `GET /tutor/suggestions/{lectureId}` | Streaming AI tutor scoped to a lecture section. Suggestions are pre-generated starter questions. |
 | `practice` | `POST /practice/sessions`, `POST /practice/sessions/{id}/next`, `POST /practice/sessions/{id}/attempts` | Adaptive practice: server generates the next problem, scoring it adjusts session `difficulty`. |
-| `assignments` | `GET /assignments`, `GET /assignments/{id}`, `POST /assignments/{id}/attempt`, `PUT /assignments/{id}/attempts/{aid}/answers/{pid}`, `POST /assignments/{id}/attempts/{aid}/submit` | Homework / test flow. Submit endpoint triggers AI grade + detection per answer. |
+| `assignments` | `GET /assignments`, `GET /assignments/{id}`, `GET /assignments/{id}/problems`, `POST /assignments/{id}/start`, `GET /assignments/attempts/{aid}`, `PUT /assignments/attempts/{aid}/answer`, `POST /assignments/attempts/{aid}/submit` | Homework flow. `start` records the chosen format and resumes any in-progress attempt; a second start on a submitted assignment returns **409**. `submit` triggers the inverted partial-credit grade + detection per answer. `/{id}/problems` is the admin grader-lab problem picker. |
 | `analytics` | `GET /analytics/summary`, `GET /analytics/topics`, `GET /analytics/activity` | KPIs, topic mastery, recent activity. |
 | `detection` | `POST /detection/scan` | Run AI + diachronic detection on an arbitrary text + trace. Used directly by the diagnostics page. |
 | `diagnostics` | `GET /diagnostics/system`, `POST /diagnostics/synthetic-run`, `POST /diagnostics/quality-control`, `POST /diagnostics/expand-lectures`, `POST /diagnostics/reset` | Self-tests and seed maintenance. See §6. |
 
-The submit endpoint's response schema (`AttemptResult`) bundles `score / total / percent / perProblem[] / detection[]` so the UI can render the AI-grade + detection verdict in one round-trip.
+The submit endpoint's response schema (`AttemptResult`) bundles `percent / perProblem[]` where each `ProblemResult` carries `credit / maxPoints / itemType / selectedIndex / correctAnswer / explanation`, plus the detection verdict — so the UI can render the inverted partial-credit grade + detection in one round-trip.
 
 ---
 
@@ -89,7 +94,8 @@ artifacts/api-server/src/
 └── lib/
     ├── ai.ts              OpenAI client (Replit AI Integrations proxy)
     ├── detection.ts       GPTZero + heuristic + diachronic scoring
-    ├── grading.ts         AI-graded answer with rationale
+    ├── homeworkGrading.ts inverted partial-credit grader (MC weights + written yield/risk rubric)
+    ├── homeworkContent/   seeded CCR section content + types (mcOptions, writtenRubric)
     └── logger.ts          singleton pino logger (req.log in routes)
 ```
 
@@ -219,13 +225,15 @@ React + Vite + Tailwind. Routes:
 
 | Route | Page | What it does |
 | --- | --- | --- |
-| `/` | `Dashboard` | Assignments progress + Course Schedule + Recent Activity |
-| `/weeks/:weekNumber` | `WeekView` | List of week's lectures and assignments |
+| `/` (landing) / `/dashboard` | `Landing` / `Dashboard` | Public landing page; signed-in dashboard shows homework progress + Course Schedule + Recent Activity |
+| `/weeks/:weekNumber` | `WeekView` | List of section's lectures and homework |
 | `/lectures/:lectureId` | `LectureView` | Lecture body + Short/Medium/Long toggle + right-rail tutor / practice |
-| `/practice/topic/:topicId` | `TopicPractice` | Adaptive single-topic drill |
-| `/assignments` | `Assignments` | All homework / tests / midterm / final |
-| `/assignments/:id` | `AssignmentRunner` | Take + review an assignment; shows AI grade + detection per answer |
-| `/analytics` | `Analytics` | KPIs, topic mastery table, recent activity |
+| `/practice/topic/:topicId` | `TopicPractice` | Adaptive single-topic scenario drill |
+| `/assignments` | `Assignments` | All section homeworks (homework-only model) |
+| `/assignments/:id` | `AssignmentRunner` | Pick a format (MCQ / hybrid / written), take the single attempt, then review inverted partial-credit + detection per item; locked once submitted |
+| `/reasoning` | `Reasoning` | Four-phase CCR diagnostic instrument (3×3 menu, fresh items per attempt, longitudinal view) |
+| `/analytics` | `Analytics` | KPIs, section mastery table, recent activity |
+| `/admin` | `AdminMode` | Operator grader lab + admin toggles (disable detection, allow paste) |
 | `/diagnostics` | `Diagnostics` | Operator self-test UI (see §6) |
 
 All server data goes through the **generated** React Query hooks from `@workspace/api-client-react`. No fetch logic should be hand-written in components.
@@ -308,16 +316,17 @@ If you change anything in this blueprint, update `replit.md` to match — they a
 
 ## 10. End-to-end request example
 
-A student submits Homework 1.1. The full path:
+A student takes and submits the Section 1.1 homework in the written format. The full path:
 
-1. Browser: `qr-course/src/pages/AssignmentRunner.tsx` calls the generated `useSubmitAttempt()` hook with `{ traces: { [problemId]: TraceInput } }`.
-2. Generated client: `POST /api/assignments/{id}/attempts/{aid}/submit`, validated against `SubmitAttemptBody` Zod schema.
-3. Express route (`routes/assignments.ts`):
+1. Browser: `qr-course/src/pages/AssignmentRunner.tsx` picks a format and calls `useStartAssignmentAttempt()` (`POST /api/assignments/{id}/start` with `{ format }`); the server creates or resumes the single in-progress attempt (409 if already submitted).
+2. Per item the student answers via `useSaveAnswer()` (`PUT /api/assignments/attempts/{aid}/answer`) with `{ problemId, answer, selectedIndex, trace }`.
+3. On submit, `useSubmitAttempt()` calls `POST /api/assignments/attempts/{aid}/submit` with `{ skipDetection }`, validated against the generated Zod schema.
+4. Express route (`routes/assignments.ts`):
    - Loads `attempt` + `answers` + `problems` from Drizzle.
-   - For each answer: calls `gradeAnswer(problem, answer)` (OpenAI JSON mode, returns `{ correct, rationale }`) **and** `detect(answer.text, trace)` in parallel.
-   - Writes `correct`, `aiScore`, `aiFlagged`, `diachronicScore`, `diachronicFlagged`, `detectionRationale` back onto each answer row.
-   - Updates `attempts.status = "submitted"`, computes `scorePercent`.
-4. Returns `AttemptResult` validated against the generated Zod schema.
-5. Browser: `AssignmentRunner` renders per-problem cards with the AI grade rationale + a detection chip (`Human-written response · confidence 94%` or `AI-detected · 91%`).
+   - For each answer the inverted grader runs: MC items take the chosen option's stored `credit` weight; written items call `gradeWrittenPart()` (yield/risk rubric, data-defeated penalty); hybrid averages both — each returns `{ credit, maxPoints, explanation }`. `detect(answer.text, trace)` runs in parallel unless `skipDetection`.
+   - Writes `credit`, detection scores, and `detectionRationale` onto each answer row.
+   - Updates `attempts.status = "submitted"`, computes `scorePercent` honoring configurable format weights.
+5. Returns `AttemptResult` validated against the generated Zod schema.
+6. Browser: `AssignmentRunner` renders per-item cards with the partial-credit %, the grader rationale, and a detection chip (`Human-written response · confidence 94%` or `AI-detected · 91%`); the page is now locked.
 
 Every layer in that chain (spec → server zod → server logic → client hook → client zod) is generated or validated from the same `openapi.yaml`. Don't introduce a parallel path.

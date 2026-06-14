@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Baby AI"
+title = "Constructive Critical Reasoning"
 version = "1.0.0"
 id = "artifacts/qr-course"
 router = "path"

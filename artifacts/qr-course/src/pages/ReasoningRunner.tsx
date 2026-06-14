@@ -28,9 +28,9 @@ type FormatOption = {
   Icon: typeof ListChecks;
 };
 
-// The three pickable answer formats. Both instruments offer the same set:
-// all multiple choice, mostly multiple choice, or short written answers.
-function formatOptions(_instrument: "subject" | "reasoning"): FormatOption[] {
+// The three pickable answer formats: all multiple choice, mostly multiple
+// choice, or short written answers.
+function formatOptions(_instrument: string): FormatOption[] {
   return [
     {
       value: "mcq",

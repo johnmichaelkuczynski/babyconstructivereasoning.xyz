@@ -33,6 +33,7 @@ import {
   type ScoreSummary,
   type OpenGrade,
 } from "../lib/reasoning";
+import { getCourseSettings } from "../lib/settings";
 
 const router: IRouter = Router();
 
@@ -45,7 +46,7 @@ function parseIdParam(raw: unknown): number {
   return parseInt(s ?? "", 10);
 }
 
-type Instrument = "subject" | "reasoning";
+type Instrument = "ccr";
 type Phase = "before" | "third1" | "third2" | "after";
 
 type ItemRowRaw = typeof diagnosticItemsTable.$inferSelect;
@@ -510,6 +511,9 @@ router.get("/reasoning/grades", async (_req, res) => {
     }),
   );
   const completedCount = reasoning.filter((r) => r.status === "passed").length;
+  const settings = await getCourseSettings();
+  const minDiagnostics = Math.min(settings.minDiagnostics, reasoning.length);
+  const diagnosticsMet = completedCount >= minDiagnostics;
 
   // Coursework is the entire grade.
   const courseworkEarned = (courseworkAvg / 100) * COURSEWORK_WEIGHT;
@@ -543,7 +547,12 @@ router.get("/reasoning/grades", async (_req, res) => {
           label: "Diagnostics (practice — not graded)",
           weightPercent: 0,
           earnedPercent: 0,
-          detail: `${completedCount} of ${reasoning.length} completed — practice only, never affects your grade`,
+          detail:
+            minDiagnostics > 0
+              ? `${completedCount} of ${reasoning.length} completed — ${
+                  diagnosticsMet ? "minimum met" : `minimum not met (${minDiagnostics} required)`
+                }; practice only, never affects your grade`
+              : `${completedCount} of ${reasoning.length} completed — practice only, never affects your grade`,
         },
       ],
       coursework,

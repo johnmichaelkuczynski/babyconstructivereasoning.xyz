@@ -13,7 +13,7 @@ tags:
   - name: course
     description: Course content (weeks, lectures, topics)
   - name: assignments
-    description: Homeworks, tests, midterm, final
+    description: Section homeworks (one graded homework per section; pick MCQ / hybrid / written)
   - name: practice
     description: Infinite practice sessions and adaptive problem generation
   - name: tutor
@@ -151,7 +151,7 @@ paths:
     get:
       operationId: listAssignments
       tags: [assignments]
-      summary: List all assignments (homeworks, tests, midterm, final)
+      summary: List all section homeworks
       responses:
         "200":
           description: OK
@@ -180,16 +180,42 @@ paths:
               schema:
                 $ref: "#/components/schemas/Assignment"
 
-  /assignments/{assignmentId}/start:
-    post:
-      operationId: startAssignmentAttempt
+  /assignments/{assignmentId}/problems:
+    get:
+      operationId: listAssignmentProblems
       tags: [assignments]
-      summary: Start (or resume) an attempt on an assignment
+      summary: List an assignment's problems across all formats (admin grader lab)
       parameters:
         - name: assignmentId
           in: path
           required: true
           schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminProblem"
+
+  /assignments/{assignmentId}/start:
+    post:
+      operationId: startAssignmentAttempt
+      tags: [assignments]
+      summary: Start (or resume) the single attempt on an assignment in a chosen format
+      parameters:
+        - name: assignmentId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartAttemptInput"
       responses:
         "200":
           description: OK
@@ -282,6 +308,38 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GraderLabResult"
+
+  /course/settings:
+    get:
+      operationId: getCourseSettings
+      tags: [course]
+      summary: Get operator-tunable course settings (format point weights, min diagnostics)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseSettings"
+
+  /admin/settings:
+    put:
+      operationId: updateCourseSettings
+      tags: [admin]
+      summary: Update operator-tunable course settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSettingsInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseSettings"
 
   /assignments/{assignmentId}/practice:
     post:
@@ -664,10 +722,24 @@ components:
           enum: [not_started, in_progress, submitted]
         bestScore: { type: ["number", "null"] }
         lastAttemptId: { type: ["integer", "null"] }
+        # Format chosen on the (single) attempt, if one exists.
+        chosenFormat:
+          type: ["string", "null"]
+          enum: [mcq, hybrid, written, null]
+
+    FormatOption:
+      type: object
+      required: [format, itemCount, label]
+      properties:
+        format:
+          type: string
+          enum: [mcq, hybrid, written]
+        itemCount: { type: integer }
+        label: { type: string }
 
     Assignment:
       type: object
-      required: [id, kind, title, weekNumber, isTimed, problems]
+      required: [id, kind, title, weekNumber, isTimed, formats, status]
       properties:
         id: { type: integer }
         kind:
@@ -678,14 +750,23 @@ components:
         isTimed: { type: boolean }
         timeLimitMinutes: { type: ["integer", "null"] }
         instructions: { type: ["string", "null"] }
-        problems:
+        # The student picks ONE of these formats; a single attempt then locks.
+        formats:
           type: array
           items:
-            $ref: "#/components/schemas/Problem"
+            $ref: "#/components/schemas/FormatOption"
+        status:
+          type: string
+          enum: [not_started, in_progress, submitted]
+        chosenFormat:
+          type: ["string", "null"]
+          enum: [mcq, hybrid, written, null]
+        lastAttemptId: { type: ["integer", "null"] }
+        bestScore: { type: ["number", "null"] }
 
     Problem:
       type: object
-      required: [id, position, prompt, topicId]
+      required: [id, position, prompt, topicId, itemType, format, maxPoints]
       properties:
         id: { type: integer }
         position: { type: integer }
@@ -693,23 +774,66 @@ components:
         topicId: { type: integer }
         topicTitle: { type: ["string", "null"] }
         hint: { type: ["string", "null"] }
+        itemType:
+          type: string
+          enum: [mc, written, hybrid]
+        format:
+          type: string
+          enum: [mcq, hybrid, written]
+        maxPoints: { type: number }
+        # For mc / hybrid: the option texts only (per-option credit weights are
+        # NEVER sent to the client).
+        options:
+          type: ["array", "null"]
+          items: { type: string }
+        # For hybrid: the short written follow-up prompt.
+        writtenPrompt: { type: ["string", "null"] }
+
+    AdminProblem:
+      type: object
+      required: [id, position, prompt, itemType, format]
+      properties:
+        id: { type: integer }
+        position: { type: integer }
+        prompt: { type: string }
+        itemType:
+          type: string
+          enum: [mc, written, hybrid]
+        format:
+          type: string
+          enum: [mcq, hybrid, written]
 
     AttemptState:
       type: object
-      required: [id, assignmentId, status, startedAt, answers]
+      required: [id, assignmentId, status, format, startedAt, problems, answers]
       properties:
         id: { type: integer }
         assignmentId: { type: integer }
         status:
           type: string
           enum: [in_progress, submitted]
+        format:
+          type: string
+          enum: [mcq, hybrid, written]
         startedAt: { type: string, format: date-time }
         submittedAt: { type: ["string", "null"], format: date-time }
         deadlineAt: { type: ["string", "null"], format: date-time }
+        problems:
+          type: array
+          items:
+            $ref: "#/components/schemas/Problem"
         answers:
           type: array
           items:
             $ref: "#/components/schemas/SavedAnswer"
+
+    StartAttemptInput:
+      type: object
+      required: [format]
+      properties:
+        format:
+          type: string
+          enum: [mcq, hybrid, written]
 
     SavedAnswer:
       type: object
@@ -717,15 +841,17 @@ components:
       properties:
         problemId: { type: integer }
         answer: { type: string }
+        selectedIndex: { type: ["integer", "null"] }
         keystrokeCount: { type: ["integer", "null"] }
         eraseCount: { type: ["integer", "null"] }
 
     AnswerInput:
       type: object
-      required: [problemId, answer, trace]
+      required: [problemId]
       properties:
         problemId: { type: integer }
-        answer: { type: string }
+        answer: { type: string, default: "" }
+        selectedIndex: { type: ["integer", "null"] }
         trace:
           $ref: "#/components/schemas/KeystrokeTrace"
 
@@ -775,15 +901,33 @@ components:
 
     GraderLabCase:
       type: object
-      required: [label, kind, expectedCorrect, answer, gradedCorrect, explanation, match]
+      required: [label, kind, expectedCredit, answer, credit, explanation]
       properties:
         label: { type: string }
         kind: { type: string }
-        expectedCorrect: { type: boolean }
+        # Expected partial credit in [0, 1] under the inverted CCR scale.
+        expectedCredit: { type: number }
         answer: { type: string }
-        gradedCorrect: { type: boolean }
+        # Credit the grader actually awarded in [0, 1].
+        credit: { type: number }
         explanation: { type: string }
-        match: { type: boolean }
+
+    CourseSettings:
+      type: object
+      required: [formatWeightMcq, formatWeightHybrid, formatWeightWritten, minDiagnostics]
+      properties:
+        formatWeightMcq: { type: number }
+        formatWeightHybrid: { type: number }
+        formatWeightWritten: { type: number }
+        minDiagnostics: { type: integer }
+
+    UpdateSettingsInput:
+      type: object
+      properties:
+        formatWeightMcq: { type: ["number", "null"] }
+        formatWeightHybrid: { type: ["number", "null"] }
+        formatWeightWritten: { type: ["number", "null"] }
+        minDiagnostics: { type: ["integer", "null"] }
 
     AttemptResult:
       type: object
@@ -804,11 +948,19 @@ components:
 
     ProblemResult:
       type: object
-      required: [problemId, correct, explanation]
+      required: [problemId, correct, credit, maxPoints, explanation]
       properties:
         problemId: { type: integer }
+        # `correct` = full credit (kept for back-compat display).
         correct: { type: boolean }
+        # Partial credit earned in [0, 1] on this item (inverted CCR scale).
+        credit: { type: number }
+        maxPoints: { type: number }
+        itemType:
+          type: ["string", "null"]
+          enum: [mc, written, hybrid, null]
         userAnswer: { type: string }
+        selectedIndex: { type: ["integer", "null"] }
         correctAnswer: { type: string }
         explanation: { type: string }
 
@@ -1055,7 +1207,7 @@ components:
         id: { type: integer }
         instrument:
           type: string
-          enum: [subject, reasoning]
+          enum: [ccr]
         phase:
           type: string
           enum: [before, third1, third2, after]
@@ -1089,7 +1241,7 @@ components:
         id: { type: integer }
         instrument:
           type: string
-          enum: [subject, reasoning]
+          enum: [ccr]
         phase:
           type: string
           enum: [before, third1, third2, after]
@@ -1294,7 +1446,7 @@ components:
         id: { type: integer }
         instrument:
           type: string
-          enum: [subject, reasoning]
+          enum: [ccr]
         phase:
           type: string
           enum: [before, third1, third2, after]

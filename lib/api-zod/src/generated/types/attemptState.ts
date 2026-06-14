@@ -5,17 +5,21 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { AttemptStateFormat } from './attemptStateFormat';
 import type { AttemptStateStatus } from './attemptStateStatus';
+import type { Problem } from './problem';
 import type { SavedAnswer } from './savedAnswer';
 
 export interface AttemptState {
   id: number;
   assignmentId: number;
   status: AttemptStateStatus;
+  format: AttemptStateFormat;
   startedAt: Date;
   /** @nullable */
   submittedAt?: Date | null;
   /** @nullable */
   deadlineAt?: Date | null;
+  problems: Problem[];
   answers: SavedAnswer[];
 }

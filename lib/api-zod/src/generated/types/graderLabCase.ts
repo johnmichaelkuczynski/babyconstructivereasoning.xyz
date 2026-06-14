@@ -9,9 +9,8 @@
 export interface GraderLabCase {
   label: string;
   kind: string;
-  expectedCorrect: boolean;
+  expectedCredit: number;
   answer: string;
-  gradedCorrect: boolean;
+  credit: number;
   explanation: string;
-  match: boolean;
 }

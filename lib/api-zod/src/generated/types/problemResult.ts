@@ -5,11 +5,18 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ProblemResultItemType } from './problemResultItemType';
 
 export interface ProblemResult {
   problemId: number;
   correct: boolean;
+  credit: number;
+  maxPoints: number;
+  /** @nullable */
+  itemType?: ProblemResultItemType;
   userAnswer?: string;
+  /** @nullable */
+  selectedIndex?: number | null;
   correctAnswer?: string;
   explanation: string;
 }

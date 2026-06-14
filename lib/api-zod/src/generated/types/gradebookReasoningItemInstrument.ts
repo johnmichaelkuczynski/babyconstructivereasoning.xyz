@@ -10,6 +10,5 @@ export type GradebookReasoningItemInstrument = typeof GradebookReasoningItemInst
 
 
 export const GradebookReasoningItemInstrument = {
-  subject: 'subject',
-  reasoning: 'reasoning',
+  ccr: 'ccr',
 } as const;

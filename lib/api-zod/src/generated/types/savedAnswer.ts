@@ -10,6 +10,8 @@ export interface SavedAnswer {
   problemId: number;
   answer: string;
   /** @nullable */
+  selectedIndex?: number | null;
+  /** @nullable */
   keystrokeCount?: number | null;
   /** @nullable */
   eraseCount?: number | null;

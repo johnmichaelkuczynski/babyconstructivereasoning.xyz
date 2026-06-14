@@ -7,6 +7,6 @@
 - [DATABASE_URL override](database-url-override.md) — app DB resolves to platform `helium/heliumdb`, which overrides a user-set DATABASE_URL secret; checkDatabase() can report "not provisioned" while the app still has a working DB.
 - [video-js scaffold gotchas](video-js-scaffold-gotchas.md) — fresh video builds break on sceneTransitions named-import, font @import order, and tsconfig missing dom lib; fix before post-build steps.
 - [Orval request-body naming](orval-request-body-naming.md) — name OpenAPI requestBody component schemas `*Input`, never `<OperationId>Body`, or the zod barrel collides with orval's generated operation-body symbol.
-- [Diagnostic instrument label](reasoning-instrument-label.md) — two instruments only: enum `subject`→"AI Knowledge", `reasoning`→"General Reasoning"; map at every render point, never print raw enum; old ethical/critical kinds removed entirely.
+- [Diagnostic instrument label](reasoning-instrument-label.md) — now ONE instrument `ccr`→"Constructive Critical Reasoning" across 4 time-series phases; older multi-instrument/subject/reasoning models removed.
 - [Course design mandates](course-design-mandates.md) — math keyboard required on ALL inputs incl. tutor (even no-math course); every question (incl. adaptive drill) must be scenario-reasoning, never one-word/recitation.
 - [Course rebrand hotspots](rebrand-hotspots.md) — in-place rebrands leave stale branding in logo SVG aria-label, demo sidebar initials, hardcoded demo problem counts, and every artifact.toml title; fresh DB needs `db push` before reseed.

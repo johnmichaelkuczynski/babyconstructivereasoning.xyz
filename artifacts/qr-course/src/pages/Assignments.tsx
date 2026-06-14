@@ -21,7 +21,7 @@ export default function Assignments() {
       <div className="p-8 max-w-4xl mx-auto w-full flex flex-col gap-8">
         <div>
           <h1 className="text-3xl font-serif font-bold text-primary mb-2">Assignments</h1>
-          <p className="text-muted-foreground">Complete your homework, tests, midterm, and final exams.</p>
+          <p className="text-muted-foreground">Complete one homework per section — pick your format and commit to the strongest conclusion the evidence supports.</p>
         </div>
 
         {isLoading ? (

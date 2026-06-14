@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Brain } from "lucide-react";
+import { Brain } from "lucide-react";
 
 const PHASE_LABELS: Record<string, string> = {
   before: "Before the course",
@@ -17,8 +17,8 @@ const PHASE_LABELS: Record<string, string> = {
 
 const PHASE_ORDER = ["before", "third1", "third2", "after"];
 
-function instrumentLabel(instrument: string): string {
-  return instrument === "subject" ? "AI Knowledge" : "General Reasoning";
+function instrumentLabel(_instrument: string): string {
+  return "Constructive Critical Reasoning";
 }
 
 function statusBadge(status: string) {
@@ -40,14 +40,12 @@ function statusBadge(status: string) {
 }
 
 function InstrumentCard({ a }: { a: ReasoningAssessmentSummary }) {
-  const isSubject = a.instrument === "subject";
-  const Icon = isSubject ? Sparkles : Brain;
   return (
     <Card className="flex flex-col justify-between" data-testid={`card-reasoning-${a.id}`}>
       <CardHeader>
         <div className="flex justify-between items-start mb-2">
           <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            <Icon className="w-3.5 h-3.5" />
+            <Brain className="w-3.5 h-3.5" />
             {instrumentLabel(a.instrument)}
           </span>
           {statusBadge(a.status)}
@@ -56,9 +54,10 @@ function InstrumentCard({ a }: { a: ReasoningAssessmentSummary }) {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <p className="text-sm text-muted-foreground">
-          {isSubject
-            ? "Check your understanding of how AI really works. Choose your format when you begin — multiple choice, mostly multiple choice, or short written answers."
-            : "Five everyday reasoning skills. Choose your format when you begin — multiple choice, mostly multiple choice, or short written answers."}
+          Practice drawing the strongest, most-testable conclusion the evidence
+          supports — not the timid "you can't conclude anything" dodge. Choose
+          your format when you begin — multiple choice, mostly multiple choice,
+          or short written answers.
         </p>
         <Link href={`/reasoning/${a.id}`}>
           <Button
@@ -90,9 +89,9 @@ export default function Reasoning() {
             Practice Checks
           </h1>
           <p className="text-muted-foreground">
-            Two short, self-paced checks — AI Knowledge and General Reasoning —
-            offered before, during, and after the course. They're practice only:
-            take them in any order, retake them as often as you like with fresh
+            Short, self-paced constructive critical reasoning checks — offered
+            before, during, and after the course. They're practice only: take
+            them in any order, retake them as often as you like with fresh
             questions each time, and they never affect your grade.
           </p>
         </div>
@@ -111,16 +110,9 @@ export default function Reasoning() {
                   {PHASE_LABELS[phase] ?? phase}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {byPhase[phase]!
-                    .slice()
-                    .sort(
-                      (x, y) =>
-                        (x.instrument === "subject" ? 0 : 1) -
-                        (y.instrument === "subject" ? 0 : 1),
-                    )
-                    .map((a) => (
-                      <InstrumentCard key={a.id} a={a} />
-                    ))}
+                  {byPhase[phase]!.map((a) => (
+                    <InstrumentCard key={a.id} a={a} />
+                  ))}
                 </div>
               </div>
             ))}

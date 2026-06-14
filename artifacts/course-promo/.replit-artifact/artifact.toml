@@ -1,6 +1,6 @@
 kind = "video"
 previewPath = "/course-promo/"
-title = "Baby AI — Promo"
+title = "Constructive Critical Reasoning — Promo"
 version = "1.0.0"
 id = "artifacts/course-promo"
 router = "path"

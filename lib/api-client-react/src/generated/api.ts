@@ -21,6 +21,7 @@ import type {
 
 import type {
   ActivityItem,
+  AdminProblem,
   AnalyticsReport,
   AnalyticsSummary,
   AnswerInput,
@@ -30,6 +31,7 @@ import type {
   AttemptResult,
   AttemptState,
   CourseOverview,
+  CourseSettings,
   DetectionResult,
   DetectionScanInput,
   Gradebook,
@@ -51,6 +53,7 @@ import type {
   ReasoningAttemptState,
   ReasoningResult,
   RewriteLectureInput,
+  StartAttemptInput,
   StartReasoningBody,
   SubmitAttemptInput,
   SubmitReasoningBody,
@@ -58,6 +61,7 @@ import type {
   TopicAnalytics,
   TutorAskInput,
   TutorReply,
+  UpdateSettingsInput,
   Week
 } from './api.schemas';
 
@@ -610,7 +614,7 @@ export const getListAssignmentsUrl = () => {
 }
 
 /**
- * @summary List all assignments (homeworks, tests, midterm, final)
+ * @summary List all section homeworks
  */
 export const listAssignments = async ( options?: RequestInit): Promise<AssignmentSummary[]> => {
 
@@ -657,7 +661,7 @@ export type ListAssignmentsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary List all assignments (homeworks, tests, midterm, final)
+ * @summary List all section homeworks
  */
 
 export function useListAssignments<TData = Awaited<ReturnType<typeof listAssignments>>, TError = ErrorType<unknown>>(
@@ -755,6 +759,83 @@ export function useGetAssignment<TData = Awaited<ReturnType<typeof getAssignment
 
 
 
+export const getListAssignmentProblemsUrl = (assignmentId: number,) => {
+
+
+
+
+  return `/api/assignments/${assignmentId}/problems`
+}
+
+/**
+ * @summary List an assignment's problems across all formats (admin grader lab)
+ */
+export const listAssignmentProblems = async (assignmentId: number, options?: RequestInit): Promise<AdminProblem[]> => {
+
+  return customFetch<AdminProblem[]>(getListAssignmentProblemsUrl(assignmentId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAssignmentProblemsQueryKey = (assignmentId: number,) => {
+    return [
+    `/api/assignments/${assignmentId}/problems`
+    ] as const;
+    }
+
+
+export const getListAssignmentProblemsQueryOptions = <TData = Awaited<ReturnType<typeof listAssignmentProblems>>, TError = ErrorType<unknown>>(assignmentId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAssignmentProblems>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAssignmentProblemsQueryKey(assignmentId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAssignmentProblems>>> = ({ signal }) => listAssignmentProblems(assignmentId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(assignmentId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAssignmentProblems>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAssignmentProblemsQueryResult = NonNullable<Awaited<ReturnType<typeof listAssignmentProblems>>>
+export type ListAssignmentProblemsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List an assignment's problems across all formats (admin grader lab)
+ */
+
+export function useListAssignmentProblems<TData = Awaited<ReturnType<typeof listAssignmentProblems>>, TError = ErrorType<unknown>>(
+ assignmentId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAssignmentProblems>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAssignmentProblemsQueryOptions(assignmentId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getStartAssignmentAttemptUrl = (assignmentId: number,) => {
 
 
@@ -764,16 +845,18 @@ export const getStartAssignmentAttemptUrl = (assignmentId: number,) => {
 }
 
 /**
- * @summary Start (or resume) an attempt on an assignment
+ * @summary Start (or resume) the single attempt on an assignment in a chosen format
  */
-export const startAssignmentAttempt = async (assignmentId: number, options?: RequestInit): Promise<AttemptState> => {
+export const startAssignmentAttempt = async (assignmentId: number,
+    startAttemptInput: StartAttemptInput, options?: RequestInit): Promise<AttemptState> => {
 
   return customFetch<AttemptState>(getStartAssignmentAttemptUrl(assignmentId),
   {
     ...options,
-    method: 'POST'
-
-
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      startAttemptInput,)
   }
 );}
 
@@ -781,8 +864,8 @@ export const startAssignmentAttempt = async (assignmentId: number, options?: Req
 
 
 export const getStartAssignmentAttemptMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startAssignmentAttempt>>, TError,{assignmentId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof startAssignmentAttempt>>, TError,{assignmentId: number}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startAssignmentAttempt>>, TError,{assignmentId: number;data: BodyType<StartAttemptInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startAssignmentAttempt>>, TError,{assignmentId: number;data: BodyType<StartAttemptInput>}, TContext> => {
 
 const mutationKey = ['startAssignmentAttempt'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -794,10 +877,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startAssignmentAttempt>>, {assignmentId: number}> = (props) => {
-          const {assignmentId} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startAssignmentAttempt>>, {assignmentId: number;data: BodyType<StartAttemptInput>}> = (props) => {
+          const {assignmentId,data} = props ?? {};
 
-          return  startAssignmentAttempt(assignmentId,requestOptions)
+          return  startAssignmentAttempt(assignmentId,data,requestOptions)
         }
 
 
@@ -808,18 +891,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type StartAssignmentAttemptMutationResult = NonNullable<Awaited<ReturnType<typeof startAssignmentAttempt>>>
-
+    export type StartAssignmentAttemptMutationBody = BodyType<StartAttemptInput>
     export type StartAssignmentAttemptMutationError = ErrorType<unknown>
 
     /**
- * @summary Start (or resume) an attempt on an assignment
+ * @summary Start (or resume) the single attempt on an assignment in a chosen format
  */
 export const useStartAssignmentAttempt = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startAssignmentAttempt>>, TError,{assignmentId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startAssignmentAttempt>>, TError,{assignmentId: number;data: BodyType<StartAttemptInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof startAssignmentAttempt>>,
         TError,
-        {assignmentId: number},
+        {assignmentId: number;data: BodyType<StartAttemptInput>},
         TContext
       > => {
       return useMutation(getStartAssignmentAttemptMutationOptions(options));
@@ -1115,6 +1198,154 @@ export const useRunGraderLab = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getRunGraderLabMutationOptions(options));
+    }
+
+export const getGetCourseSettingsUrl = () => {
+
+
+
+
+  return `/api/course/settings`
+}
+
+/**
+ * @summary Get operator-tunable course settings (format point weights, min diagnostics)
+ */
+export const getCourseSettings = async ( options?: RequestInit): Promise<CourseSettings> => {
+
+  return customFetch<CourseSettings>(getGetCourseSettingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCourseSettingsQueryKey = () => {
+    return [
+    `/api/course/settings`
+    ] as const;
+    }
+
+
+export const getGetCourseSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getCourseSettings>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCourseSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCourseSettingsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCourseSettings>>> = ({ signal }) => getCourseSettings({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCourseSettings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCourseSettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getCourseSettings>>>
+export type GetCourseSettingsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get operator-tunable course settings (format point weights, min diagnostics)
+ */
+
+export function useGetCourseSettings<TData = Awaited<ReturnType<typeof getCourseSettings>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCourseSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCourseSettingsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdateCourseSettingsUrl = () => {
+
+
+
+
+  return `/api/admin/settings`
+}
+
+/**
+ * @summary Update operator-tunable course settings
+ */
+export const updateCourseSettings = async (updateSettingsInput: UpdateSettingsInput, options?: RequestInit): Promise<CourseSettings> => {
+
+  return customFetch<CourseSettings>(getUpdateCourseSettingsUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateSettingsInput,)
+  }
+);}
+
+
+
+
+export const getUpdateCourseSettingsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCourseSettings>>, TError,{data: BodyType<UpdateSettingsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateCourseSettings>>, TError,{data: BodyType<UpdateSettingsInput>}, TContext> => {
+
+const mutationKey = ['updateCourseSettings'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCourseSettings>>, {data: BodyType<UpdateSettingsInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateCourseSettings(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCourseSettingsMutationResult = NonNullable<Awaited<ReturnType<typeof updateCourseSettings>>>
+    export type UpdateCourseSettingsMutationBody = BodyType<UpdateSettingsInput>
+    export type UpdateCourseSettingsMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update operator-tunable course settings
+ */
+export const useUpdateCourseSettings = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCourseSettings>>, TError,{data: BodyType<UpdateSettingsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateCourseSettings>>,
+        TError,
+        {data: BodyType<UpdateSettingsInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateCourseSettingsMutationOptions(options));
     }
 
 export const getGeneratePracticeAssignmentUrl = (assignmentId: number,) => {

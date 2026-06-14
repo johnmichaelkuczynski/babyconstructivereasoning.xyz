@@ -1,11 +1,7 @@
 import { chatText, chatJson } from "./ai";
 import { logger } from "./logger";
 import type { SkillArea, OpenItem, Instrument } from "./diagnosticContent";
-import {
-  REASONING_OPEN_BANK,
-  SUBJECT_OPEN_BANK,
-  AI_TOPICS,
-} from "./diagnosticContent";
+import { CCR_OPEN_BANK, CCR_SUBSKILLS } from "./ccrReasoningContent";
 
 export type ReasoningFormat = "mcq" | "hybrid" | "written";
 
@@ -393,89 +389,50 @@ const openItemContent = (o: OpenItem): GeneratedItemContent => ({
   scoring: { keyPoints: o.keyPoints, skillArea: o.skillArea } satisfies OpenScoring,
 });
 
-// Generate fresh general-reasoning MCQs for the given ordered skill areas.
-async function generateReasoningMcq(
-  skills: SkillArea[],
-  examplePrompts: string[],
-): Promise<GeneratedItemContent[]> {
-  if (skills.length === 0) return [];
-  const system =
-    "You are an assessment author writing ORIGINAL reasoning multiple-choice questions. " +
-    "Each question must measure how someone REASONS through a concrete situation (not recall of facts), have exactly four answer options with one unambiguously best answer, and target the requested skill area. " +
-    "Write scenario-style questions about everyday situations — never one-word or definition recitation. " +
-    "List the CORRECT option FIRST, followed by three plausible but wrong distractors. " +
-    "Write fresh questions on varied topics — do NOT reuse the example wording. " +
-    'Respond ONLY as JSON of the form {"items":[{"prompt":"...","options":["correct","wrong","wrong","wrong"],"skillArea":"analysis"}]}.';
-  const user =
-    `Write ${skills.length} new questions, one per skill area in THIS exact order: ${JSON.stringify(skills)}.\n` +
-    `Skill areas mean: analysis (identify assumptions/claims/conclusions), inference (what the evidence supports), evaluation (judge argument quality/sources), deduction (what necessarily follows), induction (strength of generalization/causal/analogy).\n` +
-    `For style only (do NOT copy these): ${JSON.stringify(examplePrompts)}.`;
-  const out = await chatJson<{
-    items?: { prompt?: unknown; options?: unknown; skillArea?: unknown }[];
-  }>(system, user);
-  const raw = out.items;
-  if (!Array.isArray(raw) || raw.length !== skills.length) {
-    throw new Error("reasoning mcq: wrong item count");
-  }
-  return raw.map((q, i) => {
-    const expectedSkill = skills[i]!;
-    const prompt = q.prompt;
-    const options = q.options;
-    if (typeof prompt !== "string" || prompt.trim().length < 8) {
-      throw new Error("reasoning mcq: bad prompt");
-    }
-    if (
-      !Array.isArray(options) ||
-      options.length !== 4 ||
-      !options.every((o) => typeof o === "string" && o.trim().length > 0)
-    ) {
-      throw new Error("reasoning mcq: bad options");
-    }
-    const { options: rotated, correctIndex } = rotateOptions(options as string[]);
-    return {
-      type: "mcq" as const,
-      prompt: prompt.trim(),
-      payload: { options: rotated },
-      scoring: { correctIndex, skillArea: expectedSkill } satisfies McqScoring,
-    };
-  });
-}
+// CCR generation standard, shared by the MCQ and open generators so every
+// freshly generated diagnostic item enforces the inverted rubric.
+const CCR_STANDARD =
+  "Constructive Critical Reasoning (CCR) is the discipline of drawing the STRONGEST affirmative conclusion a body of data actually supports. " +
+  "The genuinely-best answer COMMITS to the richest, most-falsifiable model and/or names a cheap decisive test. " +
+  "The classic failure mode — which must always appear as a tempting WRONG option — is the timid 'you can't conclude anything' dodge. " +
+  "Other wrong options should be a reckless overreach the data defeats, or a passive/irrelevant move.";
 
-// Generate fresh AI-knowledge ("subject") MCQs across the given course topics.
-async function generateSubjectMcq(
-  topics: string[],
+// Generate fresh CCR scenario MCQs, one per given sub-skill (in order).
+async function generateCcrMcq(
+  subskills: string[],
   examplePrompts: string[],
 ): Promise<GeneratedItemContent[]> {
-  if (topics.length === 0) return [];
+  if (subskills.length === 0) return [];
   const system =
-    "You are an assessment author writing ORIGINAL multiple-choice questions that test understanding of basic artificial-intelligence concepts for a plain-language intro course (no math, no coding). " +
-    "Each question must present a short, concrete everyday SCENARIO and ask the student to apply their understanding — never a one-word definition or recitation. " +
-    "Each has exactly four options with one unambiguously best answer. List the CORRECT option FIRST, then three plausible but wrong distractors. " +
-    "Keep the language friendly and accessible to a middle schooler or curious adult. Write fresh questions — do NOT reuse the example wording. " +
+    "You are an assessment author writing ORIGINAL constructive-critical-reasoning multiple-choice questions. " +
+    CCR_STANDARD +
+    " Each question must present a short, concrete everyday SCENARIO with data, and ask which response best follows the CCR standard — never a one-word definition or recitation. " +
+    "Each has exactly four options with one unambiguously best answer. List the CORRECT (most-committed, most-testable) option FIRST; among the three wrong distractors, ALWAYS include the 'can't conclude anything' dodge. " +
+    "Write fresh questions on varied everyday topics — do NOT reuse the example wording. " +
     'Respond ONLY as JSON of the form {"items":[{"prompt":"...","options":["correct","wrong","wrong","wrong"]}]}.';
   const user =
-    `Write ${topics.length} new questions, one per topic in THIS exact order: ${JSON.stringify(topics)}.\n` +
-    `Each question should test whether the student really understands that topic by applying it to a situation.\n` +
+    `Write ${subskills.length} new questions, one per CCR sub-skill in THIS exact order: ${JSON.stringify(subskills)}.\n` +
+    `Each question should reward the answer that best demonstrates that sub-skill.\n` +
     `For style only (do NOT copy these): ${JSON.stringify(examplePrompts)}.`;
   const out = await chatJson<{
     items?: { prompt?: unknown; options?: unknown }[];
   }>(system, user);
   const raw = out.items;
-  if (!Array.isArray(raw) || raw.length !== topics.length) {
-    throw new Error("subject mcq: wrong item count");
+  if (!Array.isArray(raw) || raw.length !== subskills.length) {
+    throw new Error("ccr mcq: wrong item count");
   }
   return raw.map((q) => {
     const prompt = q.prompt;
     const options = q.options;
     if (typeof prompt !== "string" || prompt.trim().length < 8) {
-      throw new Error("subject mcq: bad prompt");
+      throw new Error("ccr mcq: bad prompt");
     }
     if (
       !Array.isArray(options) ||
       options.length !== 4 ||
       !options.every((o) => typeof o === "string" && o.trim().length > 0)
     ) {
-      throw new Error("subject mcq: bad options");
+      throw new Error("ccr mcq: bad options");
     }
     const { options: rotated, correctIndex } = rotateOptions(options as string[]);
     return {
@@ -487,27 +444,22 @@ async function generateSubjectMcq(
   });
 }
 
-// Generate fresh short open-response questions (1-2 sentence answers). For
-// "reasoning" each item targets a skill area; for "subject" each applies an AI
-// topic. The order of `tags` sets the count.
+// Generate fresh short CCR open-response questions (1-2 sentence answers), one
+// per given sub-skill (in order). A good answer commits to the strongest
+// supported conclusion AND names a test — never hedges.
 async function generateOpenItems(
-  instrument: Instrument,
-  tags: string[],
+  subskills: string[],
 ): Promise<GeneratedItemContent[]> {
-  const count = tags.length;
+  const count = subskills.length;
   if (count === 0) return [];
   const system =
     "You are an assessment author writing ORIGINAL very short open-response questions that can be answered in ONE or TWO sentences. " +
-    (instrument === "reasoning"
-      ? "Each targets a reasoning skill and asks the student to briefly explain their reasoning about a concrete situation. "
-      : "Each presents a brief everyday situation involving AI and asks the student to briefly apply their understanding of how AI works (no math, no coding). ") +
-    "Each prompt MUST be a single, self-contained question with NO multi-part scaffolding: never ask for a specific number of examples (no 'give three examples'), never split into sub-parts like 'A, B, and C', and never tack on extra constraints. Keep it short, plain, and low-effort so a busy student answers it in a sentence or two. " +
-    "For each question also provide keyPoints: the 1-3 core ideas a correct brief answer should capture. " +
+    CCR_STANDARD +
+    " Each presents a brief everyday situation with data and asks the student to state the strongest conclusion worth committing to AND a test (or falsifying prediction) — rewarding commitment over the 'can't conclude' dodge. " +
+    "Each prompt MUST be a single, self-contained question with NO multi-part scaffolding: never ask for a specific number of examples, never split into sub-parts like 'A, B, and C', and never tack on extra constraints. Keep it short, plain, and low-effort so a busy student answers it in a sentence or two. " +
+    "For each question also provide keyPoints: the 1-3 core ideas a correct brief answer should capture (the committed conclusion and the test). " +
     'Respond ONLY as JSON {"items":[{"prompt":"...","keyPoints":["..."]}]}.';
-  const user =
-    instrument === "reasoning"
-      ? `Write ${count} questions, one per reasoning skill in THIS exact order: ${JSON.stringify(tags)}.`
-      : `Write ${count} new, distinct questions, one per AI topic in THIS exact order: ${JSON.stringify(tags)}.`;
+  const user = `Write ${count} new, distinct questions, one per CCR sub-skill in THIS exact order: ${JSON.stringify(subskills)}.`;
   const out = await chatJson<{
     items?: { prompt?: unknown; keyPoints?: unknown }[];
   }>(system, user);
@@ -515,7 +467,7 @@ async function generateOpenItems(
   if (!Array.isArray(raw) || raw.length !== count) {
     throw new Error("open items: wrong item count");
   }
-  return raw.map((q, i) => {
+  return raw.map((q) => {
     const prompt = q.prompt;
     const keyPoints = q.keyPoints;
     if (typeof prompt !== "string" || prompt.trim().length < 8) {
@@ -528,35 +480,27 @@ async function generateOpenItems(
     ) {
       throw new Error("open items: bad keyPoints");
     }
-    const skillArea =
-      instrument === "reasoning" ? (tags[i] as SkillArea) : undefined;
     return {
       type: "open" as const,
       prompt: prompt.trim(),
       payload: {},
       scoring: {
         keyPoints: (keyPoints as string[]).map((k) => k.trim()),
-        skillArea,
       } satisfies OpenScoring,
     };
   });
 }
 
-const ALL_SKILLS = Object.keys(SKILL_LABELS) as SkillArea[];
-
-// Static fallback composition per (instrument, format) so an attempt is never
-// blocked when AI generation is unavailable.
+// Static fallback composition per format so an attempt is never blocked when AI
+// generation is unavailable.
 function staticFallback(
-  instrument: Instrument,
   format: ReasoningFormat,
   length: ReasoningLength,
   template: DiagnosticItemRow[],
 ): GeneratedItemContent[] {
   const comp = itemComposition(format, length);
   const tmplMcq = templateContent(template.filter((it) => it.type === "mcq"));
-  const openBank = (
-    instrument === "reasoning" ? REASONING_OPEN_BANK : SUBJECT_OPEN_BANK
-  ).map(openItemContent);
+  const openBank = CCR_OPEN_BANK.map(openItemContent);
   if (format === "mcq") return cycleTo(tmplMcq, comp.mcq);
   if (format === "hybrid") {
     return [...cycleTo(tmplMcq, comp.mcq), ...cycleTo(openBank, comp.open)];
@@ -577,33 +521,15 @@ export async function generateVariantItems(
   const comp = itemComposition(fmt, len);
   try {
     const examples = templateItems.slice(0, 3).map((it) => it.prompt);
-    if (instrument === "reasoning") {
-      const skills = templateItems
-        .filter((it) => it.type === "mcq")
-        .map((it) => (it.scoring as McqScoring).skillArea)
-        .filter((s): s is SkillArea => !!s);
-      const baseSkills = skills.length > 0 ? skills : ALL_SKILLS;
-      if (fmt === "mcq") {
-        return await generateReasoningMcq(cycleTo(baseSkills, comp.mcq), examples);
-      }
-      if (fmt === "hybrid") {
-        const mcq = await generateReasoningMcq(cycleTo(baseSkills, comp.mcq), examples);
-        const open = await generateOpenItems("reasoning", cycleTo(baseSkills, comp.open));
-        return [...mcq, ...open];
-      }
-      return await generateOpenItems("reasoning", cycleTo(baseSkills, comp.open));
-    }
-
-    // subject
     if (fmt === "mcq") {
-      return await generateSubjectMcq(cycleTo(AI_TOPICS, comp.mcq), examples);
+      return await generateCcrMcq(cycleTo(CCR_SUBSKILLS, comp.mcq), examples);
     }
     if (fmt === "hybrid") {
-      const mcq = await generateSubjectMcq(cycleTo(AI_TOPICS, comp.mcq), examples);
-      const open = await generateOpenItems("subject", cycleTo(AI_TOPICS, comp.open));
+      const mcq = await generateCcrMcq(cycleTo(CCR_SUBSKILLS, comp.mcq), examples);
+      const open = await generateOpenItems(cycleTo(CCR_SUBSKILLS, comp.open));
       return [...mcq, ...open];
     }
-    return await generateOpenItems("subject", cycleTo(AI_TOPICS, comp.open));
+    return await generateOpenItems(cycleTo(CCR_SUBSKILLS, comp.open));
   } catch (err) {
     logger.warn(
       {
@@ -614,7 +540,7 @@ export async function generateVariantItems(
       },
       "Reasoning item generation failed, using static fallback",
     );
-    return staticFallback(instrument, fmt, len, templateItems);
+    return staticFallback(fmt, len, templateItems);
   }
 }
 

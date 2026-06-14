@@ -72,6 +72,18 @@ export const AssignmentSummaryStatus = {
   submitted: 'submitted',
 } as const;
 
+/**
+ * @nullable
+ */
+export type AssignmentSummaryChosenFormat = typeof AssignmentSummaryChosenFormat[keyof typeof AssignmentSummaryChosenFormat] | null;
+
+
+export const AssignmentSummaryChosenFormat = {
+  mcq: 'mcq',
+  hybrid: 'hybrid',
+  written: 'written',
+} as const;
+
 export interface AssignmentSummary {
   id: number;
   kind: AssignmentSummaryKind;
@@ -86,6 +98,8 @@ export interface AssignmentSummary {
   bestScore?: number | null;
   /** @nullable */
   lastAttemptId?: number | null;
+  /** @nullable */
+  chosenFormat?: AssignmentSummaryChosenFormat;
 }
 
 export interface Week {
@@ -95,6 +109,21 @@ export interface Week {
   summary?: string | null;
   lectures: LectureRef[];
   assignments: AssignmentSummary[];
+}
+
+export type FormatOptionFormat = typeof FormatOptionFormat[keyof typeof FormatOptionFormat];
+
+
+export const FormatOptionFormat = {
+  mcq: 'mcq',
+  hybrid: 'hybrid',
+  written: 'written',
+} as const;
+
+export interface FormatOption {
+  format: FormatOptionFormat;
+  itemCount: number;
+  label: string;
 }
 
 export type AssignmentKind = typeof AssignmentKind[keyof typeof AssignmentKind];
@@ -107,16 +136,26 @@ export const AssignmentKind = {
   final: 'final',
 } as const;
 
-export interface Problem {
-  id: number;
-  position: number;
-  prompt: string;
-  topicId: number;
-  /** @nullable */
-  topicTitle?: string | null;
-  /** @nullable */
-  hint?: string | null;
-}
+export type AssignmentStatus = typeof AssignmentStatus[keyof typeof AssignmentStatus];
+
+
+export const AssignmentStatus = {
+  not_started: 'not_started',
+  in_progress: 'in_progress',
+  submitted: 'submitted',
+} as const;
+
+/**
+ * @nullable
+ */
+export type AssignmentChosenFormat = typeof AssignmentChosenFormat[keyof typeof AssignmentChosenFormat] | null;
+
+
+export const AssignmentChosenFormat = {
+  mcq: 'mcq',
+  hybrid: 'hybrid',
+  written: 'written',
+} as const;
 
 export interface Assignment {
   id: number;
@@ -128,7 +167,76 @@ export interface Assignment {
   timeLimitMinutes?: number | null;
   /** @nullable */
   instructions?: string | null;
-  problems: Problem[];
+  formats: FormatOption[];
+  status: AssignmentStatus;
+  /** @nullable */
+  chosenFormat?: AssignmentChosenFormat;
+  /** @nullable */
+  lastAttemptId?: number | null;
+  /** @nullable */
+  bestScore?: number | null;
+}
+
+export type ProblemItemType = typeof ProblemItemType[keyof typeof ProblemItemType];
+
+
+export const ProblemItemType = {
+  mc: 'mc',
+  written: 'written',
+  hybrid: 'hybrid',
+} as const;
+
+export type ProblemFormat = typeof ProblemFormat[keyof typeof ProblemFormat];
+
+
+export const ProblemFormat = {
+  mcq: 'mcq',
+  hybrid: 'hybrid',
+  written: 'written',
+} as const;
+
+export interface Problem {
+  id: number;
+  position: number;
+  prompt: string;
+  topicId: number;
+  /** @nullable */
+  topicTitle?: string | null;
+  /** @nullable */
+  hint?: string | null;
+  itemType: ProblemItemType;
+  format: ProblemFormat;
+  maxPoints: number;
+  /** @nullable */
+  options?: string[] | null;
+  /** @nullable */
+  writtenPrompt?: string | null;
+}
+
+export type AdminProblemItemType = typeof AdminProblemItemType[keyof typeof AdminProblemItemType];
+
+
+export const AdminProblemItemType = {
+  mc: 'mc',
+  written: 'written',
+  hybrid: 'hybrid',
+} as const;
+
+export type AdminProblemFormat = typeof AdminProblemFormat[keyof typeof AdminProblemFormat];
+
+
+export const AdminProblemFormat = {
+  mcq: 'mcq',
+  hybrid: 'hybrid',
+  written: 'written',
+} as const;
+
+export interface AdminProblem {
+  id: number;
+  position: number;
+  prompt: string;
+  itemType: AdminProblemItemType;
+  format: AdminProblemFormat;
 }
 
 export type AttemptStateStatus = typeof AttemptStateStatus[keyof typeof AttemptStateStatus];
@@ -139,9 +247,20 @@ export const AttemptStateStatus = {
   submitted: 'submitted',
 } as const;
 
+export type AttemptStateFormat = typeof AttemptStateFormat[keyof typeof AttemptStateFormat];
+
+
+export const AttemptStateFormat = {
+  mcq: 'mcq',
+  hybrid: 'hybrid',
+  written: 'written',
+} as const;
+
 export interface SavedAnswer {
   problemId: number;
   answer: string;
+  /** @nullable */
+  selectedIndex?: number | null;
   /** @nullable */
   keystrokeCount?: number | null;
   /** @nullable */
@@ -152,12 +271,27 @@ export interface AttemptState {
   id: number;
   assignmentId: number;
   status: AttemptStateStatus;
+  format: AttemptStateFormat;
   startedAt: string;
   /** @nullable */
   submittedAt?: string | null;
   /** @nullable */
   deadlineAt?: string | null;
+  problems: Problem[];
   answers: SavedAnswer[];
+}
+
+export type StartAttemptInputFormat = typeof StartAttemptInputFormat[keyof typeof StartAttemptInputFormat];
+
+
+export const StartAttemptInputFormat = {
+  mcq: 'mcq',
+  hybrid: 'hybrid',
+  written: 'written',
+} as const;
+
+export interface StartAttemptInput {
+  format: StartAttemptInputFormat;
 }
 
 export interface KeystrokeTrace {
@@ -171,8 +305,10 @@ export interface KeystrokeTrace {
 
 export interface AnswerInput {
   problemId: number;
-  answer: string;
-  trace: KeystrokeTrace;
+  answer?: string;
+  /** @nullable */
+  selectedIndex?: number | null;
+  trace?: KeystrokeTrace;
 }
 
 export interface AnswerSaved {
@@ -199,11 +335,10 @@ export interface GraderLabInput {
 export interface GraderLabCase {
   label: string;
   kind: string;
-  expectedCorrect: boolean;
+  expectedCredit: number;
   answer: string;
-  gradedCorrect: boolean;
+  credit: number;
   explanation: string;
-  match: boolean;
 }
 
 export interface GraderLabResult {
@@ -212,10 +347,46 @@ export interface GraderLabResult {
   cases: GraderLabCase[];
 }
 
+export interface CourseSettings {
+  formatWeightMcq: number;
+  formatWeightHybrid: number;
+  formatWeightWritten: number;
+  minDiagnostics: number;
+}
+
+export interface UpdateSettingsInput {
+  /** @nullable */
+  formatWeightMcq?: number | null;
+  /** @nullable */
+  formatWeightHybrid?: number | null;
+  /** @nullable */
+  formatWeightWritten?: number | null;
+  /** @nullable */
+  minDiagnostics?: number | null;
+}
+
+/**
+ * @nullable
+ */
+export type ProblemResultItemType = typeof ProblemResultItemType[keyof typeof ProblemResultItemType] | null;
+
+
+export const ProblemResultItemType = {
+  mc: 'mc',
+  written: 'written',
+  hybrid: 'hybrid',
+} as const;
+
 export interface ProblemResult {
   problemId: number;
   correct: boolean;
+  credit: number;
+  maxPoints: number;
+  /** @nullable */
+  itemType?: ProblemResultItemType;
   userAnswer?: string;
+  /** @nullable */
+  selectedIndex?: number | null;
   correctAnswer?: string;
   explanation: string;
 }
@@ -442,8 +613,7 @@ export type ReasoningAssessmentSummaryInstrument = typeof ReasoningAssessmentSum
 
 
 export const ReasoningAssessmentSummaryInstrument = {
-  subject: 'subject',
-  reasoning: 'reasoning',
+  ccr: 'ccr',
 } as const;
 
 export type ReasoningAssessmentSummaryPhase = typeof ReasoningAssessmentSummaryPhase[keyof typeof ReasoningAssessmentSummaryPhase];
@@ -502,8 +672,7 @@ export type ReasoningAssessmentInstrument = typeof ReasoningAssessmentInstrument
 
 
 export const ReasoningAssessmentInstrument = {
-  subject: 'subject',
-  reasoning: 'reasoning',
+  ccr: 'ccr',
 } as const;
 
 export type ReasoningAssessmentPhase = typeof ReasoningAssessmentPhase[keyof typeof ReasoningAssessmentPhase];
@@ -757,8 +926,7 @@ export type GradebookReasoningItemInstrument = typeof GradebookReasoningItemInst
 
 
 export const GradebookReasoningItemInstrument = {
-  subject: 'subject',
-  reasoning: 'reasoning',
+  ccr: 'ccr',
 } as const;
 
 export type GradebookReasoningItemPhase = typeof GradebookReasoningItemPhase[keyof typeof GradebookReasoningItemPhase];

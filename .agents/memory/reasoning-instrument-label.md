@@ -1,25 +1,25 @@
 ---
-name: Diagnostic instrument enum vs. display label
-description: The two diagnostic instrument enum values and the user-facing labels they must always map to.
+name: Diagnostic instrument — single CCR instrument across 4 phases
+description: The diagnostics subsystem now has ONE instrument (ccr) measured at four time-series phases, not multiple instrument kinds.
 ---
 
-The diagnostics subsystem has exactly TWO instrument kinds. The internal enum
-(DB column, OpenAPI schema, orval-generated client/zod) uses short keys; the UI
-must always render a friendly label, never the raw enum:
+The diagnostics subsystem has exactly ONE instrument kind: `"ccr"`, whose
+user-facing label is **"Constructive Critical Reasoning"**. It is measured at
+FOUR phases (e.g. before / mid-1 / mid-2 / after) so growth can be compared over
+time. The phase, not the instrument, is what varies per attempt.
 
-- `"subject"` → **"AI Knowledge"**
-- `"reasoning"` → **"General Reasoning"**
-
-**Why:** the enum value flows through the DB column, the OpenAPI schema, and
-generated client/zod code; it is a stable internal key, not display text.
+**Why:** the product is now Constructive Critical Reasoning (CCR), not the old
+AI-literacy course. The earlier multi-instrument model (`subject` → "AI
+Knowledge", `reasoning` → "General Reasoning") is GONE, along with the even older
+`ethical` / Professional-Judgment and `critical` kinds. Do not reintroduce any of
+them.
 
 **How to apply:**
-- Never render a raw `instrument` value. Map at every render point (Reasoning
-  page, ReasoningCallout, Grades row) plus server-side seed titles / scoring
-  headlines / feedback prompts.
-- The old `"ethical"` / Professional Judgment instrument was REMOVED ENTIRELY
-  per firm user mandate — it (and any fairness-dilemma wording) must never
-  reappear anywhere. The old `"critical"` / Critical Reasoning label is also
-  gone; the reasoning instrument is now labeled "General Reasoning" and must
-  never be called "critical thinking" (avoid docility/compliance framing).
-- Item/review `type` enum is now only `mcq | open` (no dilemma type).
+- Never render a raw enum value; map `ccr` → "Constructive Critical Reasoning" at
+  every render point (Reasoning page, ReasoningCallout, Grades row) and in
+  server-side seed titles / scoring headlines / feedback prompts.
+- Diagnostics are structured as 4 sets/phases with a 3×3 item menu, fresh items
+  generated per attempt, longitudinal persistence keyed to phase, and a
+  configurable min-to-pass driving pass/fail.
+- Grading across the whole app is INVERTED (richest/most-falsifiable/most-
+  committed = top credit; cautious "can't conclude" dodge = near-zero).

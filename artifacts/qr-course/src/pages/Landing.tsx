@@ -27,8 +27,8 @@ const features = [
   },
   {
     icon: ClipboardCheck,
-    title: "AI-Graded Work",
-    body: "Homework, a unit test, and a final — each with written feedback.",
+    title: "Partial-Credit Homework",
+    body: "One graded homework per section — pick your format, get written feedback.",
   },
   {
     icon: ShieldCheck,
@@ -37,20 +37,20 @@ const features = [
   },
   {
     icon: BarChart3,
-    title: "One Unit, 8 Topics",
-    body: "From what AI really is all the way to how to use it well — and where it's headed.",
+    title: "One Unit, 8 Sections",
+    body: "From spotting a fecund lead all the way to calibrated boldness under uncertainty.",
   },
 ];
 
 const topics = [
-  { n: "1.1", title: "What AI is (and isn't)" },
-  { n: "1.2", title: "Rules vs. learning" },
-  { n: "1.3", title: "Data and training" },
-  { n: "1.4", title: "Pattern recognition" },
-  { n: "1.5", title: "Neural networks and deep learning" },
-  { n: "1.6", title: "Language models" },
-  { n: "1.7", title: "Strengths, limits, and hallucination" },
-  { n: "1.8", title: "Using AI well, and where it's headed" },
+  { n: "1.1", title: "The Fecund Lead" },
+  { n: "1.2", title: "Model Selection by Explanatory Yield" },
+  { n: "1.3", title: "Parsimony as a Live Constraint" },
+  { n: "1.4", title: "Abductive Commitment" },
+  { n: "1.5", title: "From Correlation to Mechanism" },
+  { n: "1.6", title: "The Anomaly Cluster" },
+  { n: "1.7", title: "The Cheap Decisive Test" },
+  { n: "1.8", title: "Calibrated Boldness" },
 ];
 
 export default function Landing() {
@@ -62,7 +62,7 @@ export default function Landing() {
             <Search className="w-4 h-4" />
           </div>
           <span className="font-serif font-semibold text-lg tracking-tight">
-            Baby AI
+            Constructive Critical Reasoning
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -89,15 +89,15 @@ export default function Landing() {
         <section className="max-w-4xl mx-auto px-6 pt-20 pb-16 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-medium mb-6">
             <BarChart3 className="w-3.5 h-3.5" />
-            A friendly, one-unit intro to artificial intelligence
+            A one-unit course in constructive critical reasoning
           </div>
           <h1 className="text-4xl md:text-5xl font-serif font-bold text-primary leading-tight mb-5">
-            AI is everywhere. Let's understand it together.
+            Don't just doubt. Commit to the strongest conclusion.
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            A self-paced course that teaches, tutors, drills, and grades you —
-            artificial intelligence in plain language, no math or coding required.
-            Perfect for curious students and grown-ups alike.
+            A self-paced course that teaches, tutors, drills, and grades you on
+            reasoning that builds — drawing the boldest, most-testable conclusion
+            the evidence supports, instead of the safe "you can't really know" dodge.
           </p>
           <div className="flex items-center justify-center gap-3">
             <Link href="/sign-up">
@@ -162,8 +162,8 @@ export default function Landing() {
       </main>
 
       <footer className="border-t border-border px-6 py-6 text-center text-sm text-muted-foreground">
-        Baby AI — where the curriculum, the tutor, the grader, and the
-        integrity check all live in one room.
+        Constructive Critical Reasoning — where reasoning that commits hardest
+        and tests cleanest earns the most credit.
       </footer>
     </div>
   );

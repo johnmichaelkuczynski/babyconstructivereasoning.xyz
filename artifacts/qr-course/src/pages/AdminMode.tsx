@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import {
   useListAssignments,
-  useGetAssignment,
+  useListAssignmentProblems,
   useRunGraderLab,
   GraderLabResult,
 } from "@workspace/api-client-react";
@@ -11,6 +11,13 @@ import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { useAdminMode } from "@/lib/adminMode";
 
 type Source = "problem" | "custom";
+
+// A graded case "matches" when the live grader's credit lands within a small
+// tolerance of what a fair inverted grader should award.
+const CREDIT_TOLERANCE = 0.25;
+function caseMatches(c: { credit: number; expectedCredit: number }): boolean {
+  return Math.abs(c.credit - c.expectedCredit) <= CREDIT_TOLERANCE;
+}
 
 export default function AdminMode() {
   const [adminMode, setAdminMode] = useAdminMode();
@@ -23,8 +30,11 @@ export default function AdminMode() {
   const [result, setResult] = useState<GraderLabResult | null>(null);
 
   const { data: assignments } = useListAssignments();
-  const { data: assignment } = useGetAssignment(assignmentId ?? 0, {
-    query: { enabled: !!assignmentId, queryKey: ["assignment", assignmentId] },
+  const { data: problems } = useListAssignmentProblems(assignmentId ?? 0, {
+    query: {
+      enabled: !!assignmentId,
+      queryKey: ["assignment-problems", assignmentId],
+    },
   });
   const runLab = useRunGraderLab();
 
@@ -142,13 +152,13 @@ export default function AdminMode() {
                   onChange={(e) =>
                     setProblemId(e.target.value ? Number(e.target.value) : null)
                   }
-                  disabled={!assignment}
+                  disabled={!assignmentId}
                   data-testid="select-problem"
                 >
                   <option value="">Select a problem…</option>
-                  {(assignment?.problems ?? []).map((p, idx) => (
+                  {(problems ?? []).map((p, idx) => (
                     <option key={p.id} value={p.id}>
-                      Problem {idx + 1}: {p.prompt.slice(0, 60)}
+                      {p.format} #{idx + 1}: {p.prompt.slice(0, 60)}
                       {p.prompt.length > 60 ? "…" : ""}
                     </option>
                   ))}
@@ -211,16 +221,19 @@ export default function AdminMode() {
             </div>
 
             <div className="text-sm text-muted-foreground">
-              {result.cases.filter((c) => c.match).length} of {result.cases.length}{" "}
-              cases graded as expected.
+              {result.cases.filter((c) => caseMatches(c)).length} of{" "}
+              {result.cases.length} cases graded within tolerance of the expected
+              credit.
             </div>
 
             <div className="flex flex-col gap-3">
-              {result.cases.map((c, i) => (
+              {result.cases.map((c, i) => {
+                const match = caseMatches(c);
+                return (
                 <div
                   key={i}
                   className={`rounded-lg border p-4 ${
-                    c.match
+                    match
                       ? "border-chart-2/40 bg-chart-2/5"
                       : "border-destructive/50 bg-destructive/5"
                   }`}
@@ -234,26 +247,24 @@ export default function AdminMode() {
                       </span>
                       <span>
                         expected:{" "}
-                        <strong>{c.expectedCorrect ? "correct" : "wrong"}</strong>
+                        <strong>{Math.round(c.expectedCredit * 100)}%</strong>
                       </span>
                       <span>
                         graded:{" "}
                         <strong
-                          className={
-                            c.gradedCorrect ? "text-chart-2" : "text-destructive"
-                          }
+                          className={match ? "text-chart-2" : "text-destructive"}
                         >
-                          {c.gradedCorrect ? "correct" : "wrong"}
+                          {Math.round(c.credit * 100)}%
                         </strong>
                       </span>
                       <span
                         className={`px-2 py-0.5 rounded font-semibold ${
-                          c.match
+                          match
                             ? "bg-chart-2/15 text-chart-2"
                             : "bg-destructive/15 text-destructive"
                         }`}
                       >
-                        {c.match ? "MATCH" : "MISMATCH"}
+                        {match ? "MATCH" : "MISMATCH"}
                       </span>
                     </div>
                   </div>
@@ -268,7 +279,8 @@ export default function AdminMode() {
                     {c.explanation}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

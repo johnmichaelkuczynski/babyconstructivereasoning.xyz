@@ -5,8 +5,10 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { AssignmentChosenFormat } from './assignmentChosenFormat';
 import type { AssignmentKind } from './assignmentKind';
-import type { Problem } from './problem';
+import type { AssignmentStatus } from './assignmentStatus';
+import type { FormatOption } from './formatOption';
 
 export interface Assignment {
   id: number;
@@ -18,5 +20,12 @@ export interface Assignment {
   timeLimitMinutes?: number | null;
   /** @nullable */
   instructions?: string | null;
-  problems: Problem[];
+  formats: FormatOption[];
+  status: AssignmentStatus;
+  /** @nullable */
+  chosenFormat?: AssignmentChosenFormat;
+  /** @nullable */
+  lastAttemptId?: number | null;
+  /** @nullable */
+  bestScore?: number | null;
 }

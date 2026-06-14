@@ -13,16 +13,18 @@ import {
   GetLectureResponse,
   ListTopicsResponse,
   RewriteLectureBody,
+  GetCourseSettingsResponse,
 } from "@workspace/api-zod";
 import { chatText } from "../lib/ai";
+import { getCourseSettings } from "../lib/settings";
 
 const router: IRouter = Router();
 
 const WEEK_TITLES: Record<number, { title: string; summary: string }> = {
   1: {
-    title: "Baby AI for Everyone",
+    title: "Constructive Critical Reasoning",
     summary:
-      "What AI is and isn't, rules versus learning, data and training, pattern recognition, neural networks, language models, why to trust it carefully, and how to use it well — all in plain language, no technical skills required.",
+      "How to draw the strongest, most falsifiable conclusion the evidence actually supports — finding fecund leads, choosing models by explanatory yield, committing to cheap decisive tests, and staying boldly calibrated instead of dodging behind 'we can't really know.'",
   },
 };
 
@@ -45,10 +47,15 @@ async function buildWeek(weekNumber: number) {
 
   const assignmentSummaries = await Promise.all(
     assignments.map(async (a) => {
+      // Count problems per format; a single attempt locks one format, so the
+      // representative item count is the chosen format's (or mcq before choice).
       const counts = await db.execute(
-        sql`select count(*)::int as n from problems where assignment_id = ${a.id}`,
+        sql`select format, count(*)::int as n from problems where assignment_id = ${a.id} group by format`,
       );
-      const n = (counts.rows[0] as { n?: number } | undefined)?.n ?? 0;
+      const byFormat: Record<string, number> = {};
+      for (const row of counts.rows as { format?: string; n?: number }[]) {
+        if (row.format) byFormat[row.format] = row.n ?? 0;
+      }
       const attempts = await db
         .select()
         .from(attemptsTable)
@@ -67,6 +74,11 @@ async function buildWeek(weekNumber: number) {
         ? "submitted"
         : "not_started";
       const last = attempts[attempts.length - 1];
+      const chosenFormat =
+        last?.format === "mcq" || last?.format === "hybrid" || last?.format === "written"
+          ? last.format
+          : null;
+      const n = chosenFormat ? byFormat[chosenFormat] ?? 0 : byFormat.mcq ?? 0;
       return {
         id: a.id,
         kind: a.kind as "homework" | "test" | "midterm" | "final",
@@ -78,6 +90,7 @@ async function buildWeek(weekNumber: number) {
         status,
         bestScore: best < 0 ? null : best,
         lastAttemptId: last?.id ?? null,
+        chosenFormat,
       };
     }),
   );
@@ -111,7 +124,7 @@ router.get("/course/overview", async (_req, res) => {
 
   res.json(
     GetCourseOverviewResponse.parse({
-      title: "Baby AI",
+      title: "Constructive Critical Reasoning",
       weeks,
       totals: { assignmentsCompleted, assignmentsTotal, practiceCount },
     }),
@@ -202,13 +215,13 @@ router.post(
     const sourceBody = (base && base.trim().length > 0 ? base : lecture.body).trim();
 
     const sys =
-      "You are a introductory artificial intelligence (AI) lecturer revising your own lecture at a student's request. " +
+      "You are an instructor of Constructive Critical Reasoning (CCR) revising your own lecture at a student's request. " +
       "You are given the CURRENT lecture and ONE instruction from the student about how to revise it. " +
       "Apply the instruction faithfully. ABSOLUTE RULES, no exceptions:\n" +
       "1. KEEP every concept, claim, and learning objective from the current lecture. Never drop material or change what the lecture teaches — only adjust how it is presented per the instruction.\n" +
       "2. Preserve the existing examples; you may add to or clarify them, but do not silently replace them with different ones unless the instruction explicitly asks you to.\n" +
       "3. Keep headings and section order intact. You may add sub-sections (e.g. extra examples) when the instruction calls for it.\n" +
-      "4. Stay accurate to the source material and to artificial intelligence as a subject. Do not invent fake facts, citations, or quotations.\n" +
+      "4. Stay accurate to the source material and to constructive critical reasoning as a subject. Do not invent fake facts, citations, or quotations.\n" +
       "5. Use clear Markdown. Use $...$ for any inline math.\n" +
       "6. Return ONLY the rewritten Markdown lecture body — no preface, no commentary, no surrounding code fences.";
     const user =
@@ -263,6 +276,11 @@ router.delete(
     res.json(GetLectureResponse.parse(updated));
   },
 );
+
+router.get("/course/settings", async (_req, res) => {
+  const settings = await getCourseSettings();
+  res.json(GetCourseSettingsResponse.parse(settings));
+});
 
 router.get("/course/topics", async (_req, res) => {
   const rows = await db

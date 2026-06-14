@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { AssignmentSummaryChosenFormat } from './assignmentSummaryChosenFormat';
 import type { AssignmentSummaryKind } from './assignmentSummaryKind';
 import type { AssignmentSummaryStatus } from './assignmentSummaryStatus';
 
@@ -22,4 +23,6 @@ export interface AssignmentSummary {
   bestScore?: number | null;
   /** @nullable */
   lastAttemptId?: number | null;
+  /** @nullable */
+  chosenFormat?: AssignmentSummaryChosenFormat;
 }
