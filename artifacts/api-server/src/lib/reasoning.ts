@@ -491,7 +491,10 @@ export function itemComposition(
   if (format === "mcq") return { mcq: pick(4, 6, 10), open: 0, dilemma: 0 };
   if (format === "hybrid")
     return { mcq: pick(3, 5, 8), open: pick(1, 1, 2), dilemma: 0 };
-  return { mcq: 0, open: 0, dilemma: pick(1, 2, 3) }; // written
+  // Short = one reduced-burden scenario, Medium = one full scenario (≈ the
+  // classic instrument), Long = a second full scenario. The per-scenario
+  // lightening for Short happens in generateEthicalVariant/reduceDilemmaContent.
+  return { mcq: 0, open: 0, dilemma: pick(1, 1, 2) }; // written
 }
 
 // Repeat the entries of `arr` cyclically until there are exactly `n` of them.
@@ -653,6 +656,7 @@ async function generateOpenItems(
     (domain === "critical"
       ? "Each targets a critical-reasoning skill and asks the student to briefly explain their reasoning. "
       : "Each presents a brief everyday situation involving honesty, fairness, privacy, or responsibility and asks what the person should do and why, in one sentence. ") +
+    "Each prompt MUST be a single, self-contained question with NO multi-part scaffolding: never ask for a specific number of examples (no 'give three examples'), never split into sub-parts like 'A, B, and C', and never tack on extra constraints (no 'one about a man in a hat'). Keep it short, plain, and low-effort so a busy student or professor can answer it in a sentence or two without abandoning it. " +
     "For each question also provide key_points: the 1-3 core ideas a correct brief answer should capture. " +
     'Respond ONLY as JSON {"items":[{"prompt":"...","keyPoints":["..."]}]}.';
   const user =
@@ -691,15 +695,36 @@ async function generateOpenItems(
   });
 }
 
+// Stage composition and rank depth for a generated dilemma, scaled by length so
+// a Short attempt is a genuinely lighter rate-and-rank task (fewer
+// considerations to weigh, fewer to rank) rather than the full instrument.
+// Medium and Long keep the template's full per-scenario burden (Long adds a
+// second scenario instead of enlarging one).
+function dilemmaShape(
+  scoring: DilemmaScoring,
+  length: ReasoningLength,
+): { stages: Stage[]; rankCount: number } {
+  if (length === "short") {
+    // Keep every stage represented — including the X reliability check — so the
+    // principled-judgment index and reliability check stay meaningful.
+    return {
+      stages: shuffle(["PC", "PC", "M", "P", "P", "X"] as Stage[]),
+      rankCount: 3,
+    };
+  }
+  return { stages: shuffle(scoring.stages), rankCount: scoring.rankCount };
+}
+
 async function generateEthicalVariant(
   items: DiagnosticItemRow[],
+  length: ReasoningLength = "medium",
 ): Promise<GeneratedItemContent[]> {
   const dilemma = items.find((it) => it.type === "dilemma");
   if (!dilemma) throw new Error("ethical variant: no template dilemma");
   const scoring = dilemma.scoring as DilemmaScoring;
   const payload = dilemma.payload as DilemmaPayload;
-  // Shuffle the stage order so the new item maps stages to different slots.
-  const stages = shuffle(scoring.stages);
+  // Stage order and rank depth scale with the chosen length so Short is lighter.
+  const { stages, rankCount } = dilemmaShape(scoring, length);
   const considerationCount = stages.length;
   const decisionCount = payload.decisionOptions.length;
   const system =
@@ -763,14 +788,55 @@ async function generateEthicalVariant(
       payload: {
         decisionOptions: decisionOptions.map((o) => (o as string).trim()),
         considerations: texts,
-        rankCount: scoring.rankCount,
+        rankCount,
       },
-      scoring: { stages: finalStages, rankCount: scoring.rankCount },
+      scoring: { stages: finalStages, rankCount },
     },
   ];
 }
 
 const ALL_SKILLS = Object.keys(SKILL_LABELS) as SkillArea[];
+
+// Build a length-appropriate dilemma from a template row (used in the static
+// fallback). Short trims the considerations to a balanced subset — keeping
+// PC/M/P/X represented — and a shallower rank depth; Medium/Long keep the
+// template's full per-scenario burden.
+function reduceDilemmaContent(
+  item: DiagnosticItemRow,
+  length: ReasoningLength,
+): GeneratedItemContent {
+  const payload = item.payload as DilemmaPayload;
+  const scoring = item.scoring as DilemmaScoring;
+  if (length !== "short") {
+    return { type: "dilemma", prompt: item.prompt, payload, scoring };
+  }
+  const targets: Stage[] = ["PC", "PC", "M", "P", "P", "X"];
+  const used = new Set<number>();
+  const chosen: number[] = [];
+  for (const t of targets) {
+    const idx = scoring.stages.findIndex((s, i) => s === t && !used.has(i));
+    if (idx >= 0) {
+      used.add(idx);
+      chosen.push(idx);
+    }
+  }
+  // Top up if the template lacked a requested stage.
+  for (let i = 0; i < scoring.stages.length && chosen.length < targets.length; i++) {
+    if (!used.has(i)) {
+      used.add(i);
+      chosen.push(i);
+    }
+  }
+  const considerations = chosen.map((i) => payload.considerations[i]!);
+  const stages = chosen.map((i) => scoring.stages[i]!);
+  const rankCount = Math.min(3, considerations.length);
+  return {
+    type: "dilemma",
+    prompt: item.prompt,
+    payload: { decisionOptions: payload.decisionOptions, considerations, rankCount },
+    scoring: { stages, rankCount },
+  };
+}
 
 // Static fallback composition per (instrument, format) so an attempt is never
 // blocked when AI generation is unavailable.
@@ -792,7 +858,9 @@ function staticFallback(
   }
   // ethical
   if (format === "written") {
-    const dilemmas = templateContent(template.filter((it) => it.type === "dilemma"));
+    const dilemmas = template
+      .filter((it) => it.type === "dilemma")
+      .map((d) => reduceDilemmaContent(d, length));
     return cycleTo(dilemmas, comp.dilemma); // the dilemma
   }
   const mcqBank = JUDGMENT_MCQ_FALLBACK.map(mcqBankContent);
@@ -842,7 +910,7 @@ export async function generateVariantItems(
     if (fmt === "written") {
       const dilemmas: GeneratedItemContent[] = [];
       for (let i = 0; i < comp.dilemma; i++) {
-        dilemmas.push(...(await generateEthicalVariant(templateItems)));
+        dilemmas.push(...(await generateEthicalVariant(templateItems, len)));
       }
       return dilemmas;
     }

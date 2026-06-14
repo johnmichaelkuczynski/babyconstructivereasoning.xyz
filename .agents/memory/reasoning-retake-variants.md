@@ -66,3 +66,16 @@ same fallible-hint framing. Ethical-dilemma instrument is a values inventory,
 not a correctness test — left untouched.
 **Why:** stored keys can be wrong, and partial updates leave one surface on the
 old key behavior (an architect-caught regression).
+
+**Length scaling (short/medium/long).** Item counts scale per (instrument,
+format) via `itemComposition`; Medium must ≈ the classic instrument, Short
+noticeably fewer, Long noticeably more. For the ethical "written" rate-and-rank
+dilemma, Short is made lighter PER-SCENARIO (fewer considerations + shallower
+rankCount), NOT by dilemma count alone — Short=1 reduced dilemma, Medium=1 full
+dilemma (≈ classic), Long=2 full. The reduced subset must still keep every stage
+(PC/M/P/X incl. the X reliability check) represented so the P-index/reliability
+math stays meaningful. The static fallback path must honor length too (it
+reduces the template dilemma), or Short silently serves the full instrument when
+generation fails.
+**How to apply:** `length` is read by the start route, stored on the attempt,
+reused on resume, and threaded into generation; default to "medium" when absent.
