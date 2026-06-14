@@ -9,6 +9,11 @@
 export interface ReasoningResponseInput {
   itemId: number;
   /**
+     * open — the student's short typed answer (1-2 sentences).
+     * @nullable
+     */
+  text?: string | null;
+  /**
      * mcq — chosen option index.
      * @nullable
      */

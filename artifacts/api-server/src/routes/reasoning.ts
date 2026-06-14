@@ -21,7 +21,9 @@ import {
 import {
   scoreAssessment,
   judgeCritical,
+  gradeOpen,
   generateFeedback,
+  feedbackStyleFor,
   generateVariantItems,
   buildReview,
   publicItem,
@@ -30,6 +32,7 @@ import {
   type ResponseInput,
   type ReasoningMetric,
   type ScoreSummary,
+  type OpenGrade,
 } from "../lib/reasoning";
 
 const router: IRouter = Router();
@@ -51,7 +54,7 @@ function mapItemRows(rows: ItemRowRaw[]): DiagnosticItemRow[] {
   return rows.map((r) => ({
     id: r.id,
     position: r.position,
-    type: r.type as "dilemma" | "mcq",
+    type: r.type as "dilemma" | "mcq" | "open",
     prompt: r.prompt,
     payload: r.payload,
     scoring: r.scoring,
@@ -194,6 +197,7 @@ router.post("/reasoning/assessments/:assessmentId/start", async (req, res): Prom
     return;
   }
   const retake = parsedBody.data.retake === true;
+  const format = parsedBody.data.format ?? null;
 
   const [a] = await db
     .select()
@@ -234,18 +238,29 @@ router.post("/reasoning/assessments/:assessmentId/start", async (req, res): Prom
         v as number,
       ]),
     );
+    // Reuse the lenient open-answer grades persisted at submit time, too, so the
+    // review shows the same correctness/rationale without re-grading.
+    const openGrades = new Map<number, OpenGrade>(
+      Object.entries(summary?.openByItem ?? {}).map(([k, v]) => [
+        Number(k),
+        v as OpenGrade,
+      ]),
+    );
     res.json(
       StartReasoningAttemptResponse.parse({
         id: reusable.id,
         assessmentId: reusable.assessmentId,
         status: reusable.status as "in_progress" | "submitted",
+        format: reusable.format ?? null,
         startedAt: reusable.startedAt.toISOString(),
         submittedAt: reusable.submittedAt?.toISOString() ?? null,
         passed: reusable.passed,
         feedback: reusable.feedback,
         headline: summary?.headline ?? null,
         metrics: (summary?.metrics as ReasoningMetric[] | undefined) ?? null,
-        review: reviewed ? buildReview(items, storedResponses, judged) : null,
+        review: reviewed
+          ? buildReview(items, storedResponses, judged, openGrades)
+          : null,
         items: items.map(publicItem),
       }),
     );
@@ -254,7 +269,7 @@ router.post("/reasoning/assessments/:assessmentId/start", async (req, res): Prom
 
   const [created] = await db
     .insert(diagnosticAttemptsTable)
-    .values({ assessmentId: id, status: "in_progress" })
+    .values({ assessmentId: id, status: "in_progress", format })
     .returning();
   if (!created) {
     res.status(500).json({ error: "failed to create" });
@@ -262,11 +277,16 @@ router.post("/reasoning/assessments/:assessmentId/start", async (req, res): Prom
   }
 
   // Every occurrence of the assessment presents freshly generated questions of
-  // the same kind (different scenarios/items) — including the very first take
-  // and any take after a course reset. The seeded template is only the
-  // structural blueprint, and the fallback if generation fails.
+  // the same kind (different scenarios/items), tailored to the answer format
+  // the student picked — including the very first take and any take after a
+  // course reset. The seeded template is only the structural blueprint, and the
+  // fallback if generation fails.
   const template = await loadTemplateItems(id);
-  const variant = await generateVariantItems(a.instrument as Instrument, template);
+  const variant = await generateVariantItems(
+    a.instrument as Instrument,
+    template,
+    format,
+  );
   await insertAttemptItems(id, created.id, variant);
   const items = await loadItemsForAttempt(id, created.id);
 
@@ -275,6 +295,7 @@ router.post("/reasoning/assessments/:assessmentId/start", async (req, res): Prom
       id: created.id,
       assessmentId: created.assessmentId,
       status: "in_progress",
+      format: created.format ?? null,
       startedAt: created.startedAt.toISOString(),
       submittedAt: null,
       passed: null,
@@ -324,13 +345,17 @@ router.post("/reasoning/assessments/:assessmentId/submit", async (req, res): Pro
     ? await loadItemsForAttempt(id, target.id)
     : await loadTemplateItems(id);
   const instrument = a.instrument as Instrument;
-  // For MCQ (critical) assessments, judge the genuinely correct option with the
-  // model rather than trusting the stored answer key. Both scoring and the
-  // per-question review use these judged answers.
-  const judged =
-    instrument === "critical" ? await judgeCritical(items) : new Map<number, number>();
-  const summary = scoreAssessment(instrument, items, responses, judged);
-  const feedback = await generateFeedback(instrument, a.title, summary);
+  const hasMcq = items.some((it) => it.type === "mcq");
+  const hasOpen = items.some((it) => it.type === "open");
+  // Judge the genuinely correct option for any MCQs with the model rather than
+  // trusting the stored answer key; grade any short open answers leniently on
+  // substance. Both scoring and the per-question review use these results.
+  const judged = hasMcq ? await judgeCritical(items) : new Map<number, number>();
+  const openGrades = hasOpen
+    ? await gradeOpen(items, responses)
+    : new Map<number, OpenGrade>();
+  const summary = scoreAssessment(instrument, items, responses, judged, openGrades);
+  const feedback = await generateFeedback(feedbackStyleFor(summary), a.title, summary);
 
   // Pass/Fail policy: submitting the assessment is a pass.
   const passed = true;
@@ -386,6 +411,8 @@ router.post("/reasoning/assessments/:assessmentId/submit", async (req, res): Pro
       isCorrect =
         typeof resp?.selectedIndex === "number" &&
         resp.selectedIndex === correctIndex;
+    } else if (item.type === "open") {
+      isCorrect = openGrades.get(item.id)?.correct ?? null;
     }
     return {
       attemptId,
@@ -394,6 +421,7 @@ router.post("/reasoning/assessments/:assessmentId/submit", async (req, res): Pro
       decisionIndex: resp?.decisionIndex ?? null,
       ratings: resp?.ratings ?? null,
       ranking: resp?.ranking ?? null,
+      text: typeof resp?.text === "string" ? resp.text : null,
       isCorrect,
     };
   });
@@ -408,7 +436,7 @@ router.post("/reasoning/assessments/:assessmentId/submit", async (req, res): Pro
       feedback,
       headline: summary.headline,
       metrics: summary.metrics,
-      review: buildReview(items, responses, judged),
+      review: buildReview(items, responses, judged, openGrades),
     }),
   );
 });

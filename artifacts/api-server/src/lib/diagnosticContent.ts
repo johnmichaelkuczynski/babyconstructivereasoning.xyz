@@ -373,3 +373,161 @@ export const DIAGNOSTIC_SEED: DiagnosticSeed[] = [
     mcqs: CRITICAL_UNIT1,
   },
 ];
+
+// ===========================================================================
+// SHORT OPEN-RESPONSE ITEMS & EVERYDAY-JUDGMENT MCQs
+//
+// These power the "written" and "hybrid" answer formats and act as static
+// fallbacks when AI generation is unavailable, so an attempt never blocks.
+// Open answers are 1-2 sentences and are graded LENIENTLY on substance — a
+// single correct core idea earns credit, never penalized for length.
+// ===========================================================================
+
+export type OpenItem = {
+  prompt: string;
+  // The core idea(s) a good 1-2 sentence answer should capture. Used both as
+  // the grading key and shown to the student in review.
+  keyPoints: string[];
+  skillArea?: SkillArea;
+};
+
+// One short open question per critical-reasoning skill area.
+export const OPEN_FALLBACK_CRITICAL: OpenItem[] = [
+  {
+    prompt:
+      "In one sentence, name the assumption this argument depends on: 'Everyone who studied passed the test. Sam studied, so Sam passed.'",
+    keyPoints: [
+      "It assumes Sam is one of the people the first claim covers — i.e. that studying really did guarantee passing for him too.",
+    ],
+    skillArea: "analysis",
+  },
+  {
+    prompt:
+      "A survey finds that people who exercise daily report better sleep than people who never exercise. In one sentence, say what this lets you conclude — and what it does not.",
+    keyPoints: [
+      "It shows an association/correlation, not that exercise causes better sleep.",
+      "Correlation is not causation.",
+    ],
+    skillArea: "inference",
+  },
+  {
+    prompt:
+      "In one sentence, explain why a single happy customer's testimonial is weak evidence that a product is safe for everyone.",
+    keyPoints: [
+      "One anecdote isn't representative of all users.",
+      "A sample of one with no controlled comparison can't establish general safety.",
+    ],
+    skillArea: "evaluation",
+  },
+  {
+    prompt:
+      "'If it rained, the street is wet. The street is not wet.' In one sentence, what follows, and why?",
+    keyPoints: [
+      "It did not rain.",
+      "By the contrapositive (modus tollens): if the consequence is false, the condition must be false.",
+    ],
+    skillArea: "deduction",
+  },
+  {
+    prompt:
+      "Someone sees three rainy Mondays in a row and concludes 'it always rains on Mondays.' In one sentence, what is wrong with that reasoning?",
+    keyPoints: [
+      "It's a hasty generalization.",
+      "Three cases are far too few to support 'always'.",
+    ],
+    skillArea: "induction",
+  },
+];
+
+// Short open questions for everyday-judgment (Professional Judgment) scenarios.
+export const OPEN_FALLBACK_ETHICAL: OpenItem[] = [
+  {
+    prompt:
+      "A teammate asks you to describe a tiny experimental difference as a 'huge' result on a science-fair poster. In one sentence, what should you do and why?",
+    keyPoints: [
+      "Report the result honestly/accurately.",
+      "The judges and audience deserve a truthful description so they can judge fairly.",
+      "Integrity matters more than sounding impressive.",
+    ],
+  },
+  {
+    prompt:
+      "A friend wants club members' phone numbers — given only for club reminders — to text them about a bake sale. In one sentence, what should you do and why?",
+    keyPoints: [
+      "Don't share the numbers without the members' consent.",
+      "They were given for a specific purpose; sharing them breaks that promise and their privacy.",
+    ],
+  },
+];
+
+// Everyday ethical-judgment multiple-choice questions (correct option FIRST,
+// rotated at generation time). Tagged with a reasoning skill so the score
+// breakdown still works for MCQ-only Professional Judgment attempts.
+export const JUDGMENT_MCQ_FALLBACK: McqItem[] = [
+  {
+    prompt:
+      "Dana finds a wallet on the sidewalk with $200 cash and an ID card inside. The most defensible thing to do is:",
+    options: [
+      "Return the wallet and the money to the owner using the ID.",
+      "Keep the cash and hand in the empty wallet.",
+      "Leave the wallet exactly where it was found.",
+      "Keep everything, since 'finders keepers'.",
+    ],
+    skillArea: "evaluation",
+  },
+  {
+    prompt:
+      "A teammate asks Mia to label a tiny experimental result as a 'huge difference' on a poster to impress judges. The strongest reason for Mia to refuse is that:",
+    options: [
+      "The audience deserves an accurate description to judge the work fairly.",
+      "Refusing makes Mia look like a harder worker.",
+      "Exaggerating is more effort than it's worth.",
+      "Her teammate might be wrong about the numbers anyway.",
+    ],
+    skillArea: "evaluation",
+  },
+  {
+    prompt:
+      "A friend asks Theo for club members' phone numbers — collected only for club reminders — to text them ads. The strongest consideration against sharing is:",
+    options: [
+      "The members gave their numbers for one purpose and never agreed to ads.",
+      "Sending lots of texts could cost money.",
+      "The friend could just send the texts personally.",
+      "Some of the numbers might be out of date.",
+    ],
+    skillArea: "evaluation",
+  },
+  {
+    prompt:
+      "You realize you accidentally broke a classmate's project. The most responsible first step is to:",
+    options: [
+      "Tell them what happened and offer to help fix it.",
+      "Say nothing and hope they don't notice.",
+      "Blame the crowded room.",
+      "Wait to see whether anyone saw you.",
+    ],
+    skillArea: "evaluation",
+  },
+  {
+    prompt:
+      "An online service offers to 'guarantee an A' if you pay for the test answers in advance. Choosing not to use it best reflects:",
+    options: [
+      "Fairness to other students and the value of doing your own work.",
+      "A worry about catching a computer virus.",
+      "Simply not having enough money to pay.",
+      "A general distrust of online payments.",
+    ],
+    skillArea: "evaluation",
+  },
+  {
+    prompt:
+      "A cashier accidentally hands you $10 too much in change. The most honest response is to:",
+    options: [
+      "Point out the mistake and return the extra money.",
+      "Keep it — it was their error, not yours.",
+      "Keep it but feel a little guilty.",
+      "Spend it quickly before anyone notices.",
+    ],
+    skillArea: "evaluation",
+  },
+];

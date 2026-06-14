@@ -1075,7 +1075,7 @@ components:
         position: { type: integer }
         type:
           type: string
-          enum: [dilemma, mcq]
+          enum: [dilemma, mcq, open]
         prompt: { type: string }
         options:
           type: ["array", "null"]
@@ -1121,6 +1121,9 @@ components:
         status:
           type: string
           enum: [in_progress, submitted]
+        format:
+          type: ["string", "null"]
+          description: The answer format used for this attempt (mcq | hybrid | written).
         startedAt: { type: string, format: date-time }
         submittedAt: { type: ["string", "null"], format: date-time }
         passed: { type: ["boolean", "null"] }
@@ -1152,6 +1155,9 @@ components:
       required: [itemId]
       properties:
         itemId: { type: integer }
+        text:
+          type: ["string", "null"]
+          description: open — the student's short typed answer (1-2 sentences).
         selectedIndex:
           type: ["integer", "null"]
           description: mcq — chosen option index.
@@ -1189,6 +1195,16 @@ components:
           description: >-
             When true, begin a fresh attempt even if a previous attempt was
             already submitted. An in-progress attempt is still resumed.
+        format:
+          type: string
+          enum: [mcq, hybrid, written]
+          description: >-
+            The answer format the student picked for this attempt. "mcq" =
+            multiple choice only (no typing); "hybrid" = mostly multiple choice
+            plus 1-2 one-sentence written answers; "written" = short open
+            answers (for Professional Judgment, the rate-and-rank dilemma).
+            Applied only when creating a new attempt; ignored when resuming or
+            reviewing. Defaults to the instrument's classic format.
 
     SubmitReasoningBody:
       type: object
@@ -1214,7 +1230,7 @@ components:
         itemId: { type: integer }
         type:
           type: string
-          enum: [dilemma, mcq]
+          enum: [dilemma, mcq, open]
         prompt: { type: string }
         options:
           type: ["array", "null"]
@@ -1244,6 +1260,16 @@ components:
           type: ["array", "null"]
           items: { type: integer }
           description: dilemma — consideration indices the student ranked most-important first.
+        text:
+          type: ["string", "null"]
+          description: open — the student's typed answer.
+        expectedPoints:
+          type: ["array", "null"]
+          items: { type: string }
+          description: open — the key idea(s) a good brief answer should capture.
+        rationale:
+          type: ["string", "null"]
+          description: open — the grader's brief explanation of correctness.
 
     ReasoningResult:
       type: object

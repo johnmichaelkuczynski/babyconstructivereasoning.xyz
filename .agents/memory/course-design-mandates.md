@@ -31,3 +31,15 @@ single-word concept-ID questions and was the one place that violated this.
 **How to apply:** Any new question-generation prompt must forbid definitions/one-word
 answers and demand a concrete case + reasoned answer. The semantic `gradeAnswer` grader
 already handles reasoned answers, so longer answers are safe to grade.
+
+## Typed (open) answers are graded leniently on substance, NEVER on length
+The diagnostic instruments offer three pickable formats (mcq / hybrid / written).
+For any typed/open answer, grading must credit a single correct core idea even if
+stated very briefly. Length, grammar, spelling, and coverage are never penalized.
+
+**Why:** Direct constraint — keep typing minimal and grade short answers on substance.
+A deterministic `words >= N` fallback inside `gradeOpen` violated this (short-but-correct
+answers were failed when the LLM grader was unavailable).
+**How to apply:** The LLM grader prompt must say "never penalize length"; the
+no-model fallback must credit any on-topic non-blank answer (test for content, e.g.
+contains an alphanumeric char) — never a word/character count threshold.

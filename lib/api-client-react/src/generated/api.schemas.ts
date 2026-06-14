@@ -485,6 +485,7 @@ export type ReasoningItemType = typeof ReasoningItemType[keyof typeof ReasoningI
 export const ReasoningItemType = {
   dilemma: 'dilemma',
   mcq: 'mcq',
+  open: 'open',
 } as const;
 
 export interface ReasoningItem {
@@ -565,6 +566,7 @@ export type ReasoningReviewItemType = typeof ReasoningReviewItemType[keyof typeo
 export const ReasoningReviewItemType = {
   dilemma: 'dilemma',
   mcq: 'mcq',
+  open: 'open',
 } as const;
 
 export interface ReasoningReviewItem {
@@ -611,12 +613,32 @@ export interface ReasoningReviewItem {
      * @nullable
      */
   ranking?: number[] | null;
+  /**
+     * open — the student's typed answer.
+     * @nullable
+     */
+  text?: string | null;
+  /**
+     * open — the key idea(s) a good brief answer should capture.
+     * @nullable
+     */
+  expectedPoints?: string[] | null;
+  /**
+     * open — the grader's brief explanation of correctness.
+     * @nullable
+     */
+  rationale?: string | null;
 }
 
 export interface ReasoningAttemptState {
   id: number;
   assessmentId: number;
   status: ReasoningAttemptStateStatus;
+  /**
+     * The answer format used for this attempt (mcq | hybrid | written).
+     * @nullable
+     */
+  format?: string | null;
   startedAt: string;
   /** @nullable */
   submittedAt?: string | null;
@@ -645,6 +667,11 @@ export interface ReasoningAttemptState {
 
 export interface ReasoningResponseInput {
   itemId: number;
+  /**
+     * open — the student's short typed answer (1-2 sentences).
+     * @nullable
+     */
+  text?: string | null;
   /**
      * mcq — chosen option index.
      * @nullable
@@ -691,9 +718,23 @@ export interface RewriteLectureInput {
   baseLevel?: RewriteLectureInputBaseLevel;
 }
 
+/**
+ * The answer format the student picked for this attempt. "mcq" = multiple choice only (no typing); "hybrid" = mostly multiple choice plus 1-2 one-sentence written answers; "written" = short open answers (for Professional Judgment, the rate-and-rank dilemma). Applied only when creating a new attempt; ignored when resuming or reviewing. Defaults to the instrument's classic format.
+ */
+export type StartReasoningBodyFormat = typeof StartReasoningBodyFormat[keyof typeof StartReasoningBodyFormat];
+
+
+export const StartReasoningBodyFormat = {
+  mcq: 'mcq',
+  hybrid: 'hybrid',
+  written: 'written',
+} as const;
+
 export interface StartReasoningBody {
   /** When true, begin a fresh attempt even if a previous attempt was already submitted. An in-progress attempt is still resumed. */
   retake?: boolean;
+  /** The answer format the student picked for this attempt. "mcq" = multiple choice only (no typing); "hybrid" = mostly multiple choice plus 1-2 one-sentence written answers; "written" = short open answers (for Professional Judgment, the rate-and-rank dilemma). Applied only when creating a new attempt; ignored when resuming or reviewing. Defaults to the instrument's classic format. */
+  format?: StartReasoningBodyFormat;
 }
 
 export interface SubmitReasoningBody {

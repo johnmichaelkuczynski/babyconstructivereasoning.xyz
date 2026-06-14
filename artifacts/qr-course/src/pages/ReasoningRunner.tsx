@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useParams, Link } from "wouter";
 import {
   useGetReasoningAssessment,
+  useListReasoningAssessments,
   useStartReasoningAttempt,
   useSubmitReasoningAttempt,
 } from "@workspace/api-client-react";
@@ -12,10 +13,12 @@ import type {
   ReasoningResult,
   ReasoningReviewItem,
   ReasoningMetric,
+  StartReasoningBodyFormat,
 } from "@workspace/api-client-react";
+import { AnswerInput } from "@/components/AnswerInput";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, AlertCircle, XCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, XCircle, ListChecks, PenLine, SplitSquareHorizontal } from "lucide-react";
 
 const RATING_LABELS = ["No importance", "Little", "Some", "Much", "Great"];
 
@@ -25,11 +28,67 @@ type DilemmaState = {
   ranks: Record<number, number>; // considerationIndex -> 1..rankCount
 };
 
+type FormatOption = {
+  value: StartReasoningBodyFormat;
+  title: string;
+  description: string;
+  Icon: typeof ListChecks;
+};
+
+// Per-instrument copy for the three pickable answer formats. The internal
+// instrument enum stays "ethical"/"critical"; the label shown is always the
+// friendly name.
+function formatOptions(instrument: "ethical" | "critical"): FormatOption[] {
+  if (instrument === "ethical") {
+    return [
+      {
+        value: "mcq",
+        title: "Multiple choice",
+        description: "Judgment scenarios — pick the best response. No typing.",
+        Icon: ListChecks,
+      },
+      {
+        value: "hybrid",
+        title: "Mostly multiple choice",
+        description: "Multiple choice plus one short one-sentence answer.",
+        Icon: SplitSquareHorizontal,
+      },
+      {
+        value: "written",
+        title: "Rate-and-rank dilemma",
+        description: "Work through one scenario: choose, rate, and rank what mattered.",
+        Icon: PenLine,
+      },
+    ];
+  }
+  return [
+    {
+      value: "mcq",
+      title: "Multiple choice",
+      description: "Pick the best answer for each question. No typing.",
+      Icon: ListChecks,
+    },
+    {
+      value: "hybrid",
+      title: "Mostly multiple choice",
+      description: "Multiple choice plus one or two one-sentence answers.",
+      Icon: SplitSquareHorizontal,
+    },
+    {
+      value: "written",
+      title: "Short written answers",
+      description: "A few open questions, one to two sentences each.",
+      Icon: PenLine,
+    },
+  ];
+}
+
 export default function ReasoningRunner() {
   const params = useParams();
   const assessmentId = Number(params.id);
 
   const { data: assessment, isLoading } = useGetReasoningAssessment(assessmentId);
+  const { data: list, isLoading: listLoading } = useListReasoningAssessments();
   const startAttempt = useStartReasoningAttempt();
   const submitAttempt = useSubmitReasoningAttempt();
 
@@ -45,32 +104,67 @@ export default function ReasoningRunner() {
   // template; each retake returns freshly generated questions of the same kind.
   const [items, setItems] = useState<ReasoningItem[] | null>(null);
 
+  // Whether to show the format picker before starting/restarting an attempt.
+  const [showPicker, setShowPicker] = useState(false);
+  const decidedRef = useRef(false);
+  const retakeRef = useRef(false);
+
   // MCQ selections: itemId -> optionIndex
   const [mcqAnswers, setMcqAnswers] = useState<Record<number, number>>({});
+  // Open answers: itemId -> typed text
+  const [openAnswers, setOpenAnswers] = useState<Record<number, string>>({});
   // Dilemma state: itemId -> state
   const [dilemma, setDilemma] = useState<Record<number, DilemmaState>>({});
   const [error, setError] = useState<string | null>(null);
 
+  function applyStarted(data: {
+    items: ReasoningItem[];
+    status: string;
+    feedback?: string | null;
+    headline?: string | null;
+    metrics?: ReasoningMetric[] | null;
+    review?: ReasoningReviewItem[] | null;
+  }) {
+    setItems(data.items);
+    if (data.status === "submitted") {
+      setAlreadyPassed({
+        feedback: data.feedback ?? null,
+        headline: data.headline ?? null,
+        metrics: data.metrics ?? null,
+        review: data.review ?? null,
+      });
+    }
+  }
+
+  // On first load, decide whether to show the format picker (a fresh, not-yet-
+  // started assessment) or to auto-resume/review an existing attempt.
   useEffect(() => {
-    if (!assessmentId || startAttempt.isPending || result) return;
+    if (decidedRef.current) return;
+    if (!assessmentId || !list) return;
+    decidedRef.current = true;
+    const summary = list.find((s) => s.id === assessmentId);
+    if (summary && summary.status === "not_started") {
+      setShowPicker(true);
+      return;
+    }
+    startAttempt.mutate({ assessmentId }, { onSuccess: applyStarted });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list, assessmentId]);
+
+  function pickFormat(format: StartReasoningBodyFormat) {
+    setShowPicker(false);
+    setError(null);
+    const data = retakeRef.current ? { retake: true, format } : { format };
     startAttempt.mutate(
-      { assessmentId },
+      { assessmentId, data },
       {
-        onSuccess: (data) => {
-          setItems(data.items);
-          if (data.status === "submitted") {
-            setAlreadyPassed({
-              feedback: data.feedback ?? null,
-              headline: data.headline ?? null,
-              metrics: data.metrics ?? null,
-              review: data.review ?? null,
-            });
-          }
+        onSuccess: (resp) => {
+          retakeRef.current = false;
+          applyStarted(resp);
         },
       },
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assessmentId]);
+  }
 
   function setDecision(itemId: number, idx: number) {
     setDilemma((prev) => ({
@@ -109,6 +203,9 @@ export default function ReasoningRunner() {
       if (item.type === "mcq") {
         return { itemId: item.id, selectedIndex: mcqAnswers[item.id] ?? null };
       }
+      if (item.type === "open") {
+        return { itemId: item.id, text: openAnswers[item.id] ?? "" };
+      }
       const st = dilemma[item.id];
       const consCount = item.considerations?.length ?? 0;
       const ratings = Array.from({ length: consCount }, (_, i) => st?.ratings[i] ?? 0);
@@ -131,6 +228,8 @@ export default function ReasoningRunner() {
     for (const item of items) {
       if (item.type === "mcq") {
         if (mcqAnswers[item.id] === undefined) return "Please answer every question before submitting.";
+      } else if (item.type === "open") {
+        if (!(openAnswers[item.id] ?? "").trim()) return "Please write a short answer for every question before submitting.";
       } else {
         const st = dilemma[item.id];
         if (!st || st.decisionIndex === null) return "Please choose a decision for the scenario.";
@@ -144,18 +243,14 @@ export default function ReasoningRunner() {
 
   function handleRetake() {
     setError(null);
-    startAttempt.mutate(
-      { assessmentId, data: { retake: true } },
-      {
-        onSuccess: (data) => {
-          setItems(data.items);
-          setResult(null);
-          setAlreadyPassed(null);
-          setMcqAnswers({});
-          setDilemma({});
-        },
-      },
-    );
+    setResult(null);
+    setAlreadyPassed(null);
+    setItems(null);
+    setMcqAnswers({});
+    setOpenAnswers({});
+    setDilemma({});
+    retakeRef.current = true;
+    setShowPicker(true);
   }
 
   function handleSubmit() {
@@ -172,7 +267,60 @@ export default function ReasoningRunner() {
     );
   }
 
-  if (isLoading || !assessment || (!items && !alreadyPassed && !result)) {
+  if (isLoading || !assessment || listLoading) {
+    return (
+      <Layout>
+        <div className="p-8 max-w-3xl mx-auto w-full flex flex-col gap-8">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </Layout>
+    );
+  }
+
+  // Format picker — shown before a fresh take or a retake.
+  if (showPicker) {
+    const options = formatOptions(assessment.instrument);
+    return (
+      <Layout>
+        <div className="p-8 max-w-3xl mx-auto w-full flex flex-col gap-8">
+          <div className="border-b pb-4">
+            <h1 className="text-2xl font-serif font-bold text-primary">{assessment.title}</h1>
+            {assessment.subtitle && <p className="text-sm text-muted-foreground mt-1">{assessment.subtitle}</p>}
+            <p className="text-sm text-muted-foreground mt-3">
+              Choose how you'd like to answer this time. You can pick a different format next time.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {options.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => pickFormat(opt.value)}
+                disabled={startAttempt.isPending}
+                className="text-left flex flex-col gap-2 rounded-lg border border-border p-5 hover:border-primary hover:bg-primary/5 transition-colors disabled:opacity-60"
+                data-testid={`format-${opt.value}`}
+              >
+                <opt.Icon className="w-6 h-6 text-primary" />
+                <span className="font-serif font-semibold">{opt.title}</span>
+                <span className="text-sm text-muted-foreground">{opt.description}</span>
+              </button>
+            ))}
+          </div>
+          {startAttempt.isPending && (
+            <p className="text-sm text-muted-foreground">Preparing your questions…</p>
+          )}
+          <div>
+            <Link href="/reasoning">
+              <Button variant="outline" data-testid="button-back-reasoning">Back to Assessments</Button>
+            </Link>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!items && !alreadyPassed && !result) {
     return (
       <Layout>
         <div className="p-8 max-w-3xl mx-auto w-full flex flex-col gap-8">
@@ -268,6 +416,14 @@ export default function ReasoningRunner() {
                 selected={mcqAnswers[item.id]}
                 onSelect={(opt) => setMcqAnswers((p) => ({ ...p, [item.id]: opt }))}
               />
+            ) : item.type === "open" ? (
+              <OpenQuestion
+                key={item.id}
+                index={idx}
+                item={item}
+                value={openAnswers[item.id] ?? ""}
+                onChange={(val) => setOpenAnswers((p) => ({ ...p, [item.id]: val }))}
+              />
             ) : (
               <DilemmaQuestion
                 key={item.id}
@@ -342,6 +498,33 @@ function McqQuestion({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function OpenQuestion({
+  index,
+  item,
+  value,
+  onChange,
+}: {
+  index: number;
+  item: ReasoningItem;
+  value: string;
+  onChange: (val: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3" data-testid={`question-${item.id}`}>
+      <h3 className="font-medium">
+        <span className="text-muted-foreground mr-2">{index + 1}.</span>
+        {item.prompt}
+      </h3>
+      <p className="text-xs text-muted-foreground">Answer in one or two sentences — your reasoning matters, not the length.</p>
+      <AnswerInput
+        value={value}
+        onChange={(val) => onChange(val)}
+        placeholder="Type a short answer…"
+      />
     </div>
   );
 }
@@ -493,6 +676,53 @@ function ReviewCard({ item, index }: { item: ReasoningReviewItem; index: number 
             );
           })}
         </div>
+      </div>
+    );
+  }
+
+  if (item.type === "open") {
+    const expectedPoints = item.expectedPoints ?? [];
+    return (
+      <div className="rounded-lg border border-border bg-card p-5" data-testid={`review-item-${item.itemId}`}>
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <p className="font-medium">
+            <span className="text-muted-foreground mr-2">{index + 1}.</span>
+            {item.prompt}
+          </p>
+          {item.isCorrect === null ? (
+            <span className="inline-flex items-center gap-1 text-muted-foreground text-sm font-medium shrink-0">
+              <AlertCircle className="w-4 h-4" /> No answer
+            </span>
+          ) : item.isCorrect ? (
+            <span className="inline-flex items-center gap-1 text-chart-2 text-sm font-medium shrink-0">
+              <CheckCircle2 className="w-4 h-4" /> Credit
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-destructive text-sm font-medium shrink-0">
+              <XCircle className="w-4 h-4" /> Not yet
+            </span>
+          )}
+        </div>
+        <div className="mb-3">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Your answer</div>
+          <p className="text-sm whitespace-pre-line">{item.text?.trim() ? item.text : "No answer recorded"}</p>
+        </div>
+        {item.rationale && (
+          <div className="mb-3">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Feedback</div>
+            <p className="text-sm">{item.rationale}</p>
+          </div>
+        )}
+        {expectedPoints.length > 0 && (
+          <div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">What a strong answer covers</div>
+            <ul className="list-disc list-inside text-sm flex flex-col gap-1">
+              {expectedPoints.map((p, i) => (
+                <li key={i}>{p}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     );
   }

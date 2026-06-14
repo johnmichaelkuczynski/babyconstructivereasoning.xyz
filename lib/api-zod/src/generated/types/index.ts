@@ -74,6 +74,7 @@ export * from './rewriteLectureInput';
 export * from './rewriteLectureInputBaseLevel';
 export * from './savedAnswer';
 export * from './startReasoningBody';
+export * from './startReasoningBodyFormat';
 export * from './submitAttemptInput';
 export * from './submitReasoningBody';
 export * from './topic';

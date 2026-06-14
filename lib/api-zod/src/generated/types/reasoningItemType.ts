@@ -12,4 +12,5 @@ export type ReasoningItemType = typeof ReasoningItemType[keyof typeof ReasoningI
 export const ReasoningItemType = {
   dilemma: 'dilemma',
   mcq: 'mcq',
+  open: 'open',
 } as const;

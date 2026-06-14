@@ -51,4 +51,19 @@ export interface ReasoningReviewItem {
      * @nullable
      */
   ranking?: number[] | null;
+  /**
+     * open — the student's typed answer.
+     * @nullable
+     */
+  text?: string | null;
+  /**
+     * open — the key idea(s) a good brief answer should capture.
+     * @nullable
+     */
+  expectedPoints?: string[] | null;
+  /**
+     * open — the grader's brief explanation of correctness.
+     * @nullable
+     */
+  rationale?: string | null;
 }

@@ -14,6 +14,11 @@ export interface ReasoningAttemptState {
   id: number;
   assessmentId: number;
   status: ReasoningAttemptStateStatus;
+  /**
+     * The answer format used for this attempt (mcq | hybrid | written).
+     * @nullable
+     */
+  format?: string | null;
   startedAt: Date;
   /** @nullable */
   submittedAt?: Date | null;

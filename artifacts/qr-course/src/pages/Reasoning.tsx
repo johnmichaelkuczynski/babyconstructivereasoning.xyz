@@ -47,8 +47,8 @@ function InstrumentCard({ a }: { a: ReasoningAssessmentSummary }) {
       <CardContent className="flex flex-col gap-4">
         <p className="text-sm text-muted-foreground">
           {isEthical
-            ? "Work through a realistic everyday-judgment scenario, then rate and rank the considerations behind your decision."
-            : `${a.itemCount} multiple-choice questions across five reasoning skills.`}
+            ? "Realistic everyday-judgment scenarios. Choose your format when you begin — multiple choice, mostly multiple choice, or a rate-and-rank dilemma."
+            : "Five reasoning skills. Choose your format when you begin — multiple choice, mostly multiple choice, or short written answers."}
         </p>
         <Link href={`/reasoning/${a.id}`}>
           <Button
