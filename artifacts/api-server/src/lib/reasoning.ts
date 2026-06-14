@@ -458,6 +458,50 @@ export function normalizeFormat(
   return instrument === "ethical" ? "written" : "mcq";
 }
 
+export type ReasoningLength = "short" | "medium" | "long";
+
+export function normalizeLength(length?: string | null): ReasoningLength {
+  if (length === "short" || length === "medium" || length === "long") {
+    return length;
+  }
+  return "medium";
+}
+
+// How many of each item kind to produce for a given (instrument, format, length).
+interface ItemComposition {
+  mcq: number;
+  open: number;
+  dilemma: number;
+}
+
+export function itemComposition(
+  instrument: "ethical" | "critical",
+  format: ReasoningFormat,
+  length: ReasoningLength,
+): ItemComposition {
+  const pick = (short: number, medium: number, long: number): number =>
+    length === "short" ? short : length === "long" ? long : medium;
+  if (instrument === "critical") {
+    if (format === "mcq") return { mcq: pick(5, 10, 16), open: 0, dilemma: 0 };
+    if (format === "hybrid")
+      return { mcq: pick(4, 8, 12), open: pick(1, 2, 3), dilemma: 0 };
+    return { mcq: 0, open: pick(3, 5, 8), dilemma: 0 }; // written
+  }
+  // ethical
+  if (format === "mcq") return { mcq: pick(4, 6, 10), open: 0, dilemma: 0 };
+  if (format === "hybrid")
+    return { mcq: pick(3, 5, 8), open: pick(1, 1, 2), dilemma: 0 };
+  return { mcq: 0, open: 0, dilemma: pick(1, 2, 3) }; // written
+}
+
+// Repeat the entries of `arr` cyclically until there are exactly `n` of them.
+function cycleTo<T>(arr: T[], n: number): T[] {
+  if (arr.length === 0 || n <= 0) return [];
+  const out: T[] = [];
+  for (let i = 0; i < n; i++) out.push(arr[i % arr.length]!);
+  return out;
+}
+
 function rotateOptions(options: string[]): { options: string[]; correctIndex: number } {
   const n = options.length;
   const off = Math.floor(Math.random() * n);
@@ -733,27 +777,31 @@ const ALL_SKILLS = Object.keys(SKILL_LABELS) as SkillArea[];
 function staticFallback(
   instrument: "ethical" | "critical",
   format: ReasoningFormat,
+  length: ReasoningLength,
   template: DiagnosticItemRow[],
 ): GeneratedItemContent[] {
+  const comp = itemComposition(instrument, format, length);
   if (instrument === "critical") {
-    const tmplMcq = template.filter((it) => it.type === "mcq");
-    if (format === "mcq") return templateContent(tmplMcq);
+    const tmplMcq = templateContent(template.filter((it) => it.type === "mcq"));
+    const openBank = OPEN_FALLBACK_CRITICAL.map(openItemContent);
+    if (format === "mcq") return cycleTo(tmplMcq, comp.mcq);
     if (format === "hybrid") {
-      return [
-        ...templateContent(tmplMcq.slice(0, 8)),
-        ...OPEN_FALLBACK_CRITICAL.slice(0, 2).map(openItemContent),
-      ];
+      return [...cycleTo(tmplMcq, comp.mcq), ...cycleTo(openBank, comp.open)];
     }
-    return OPEN_FALLBACK_CRITICAL.slice(0, 5).map(openItemContent); // written
+    return cycleTo(openBank, comp.open); // written
   }
   // ethical
-  if (format === "written") return templateContent(template); // the dilemma
+  if (format === "written") {
+    const dilemmas = templateContent(template.filter((it) => it.type === "dilemma"));
+    return cycleTo(dilemmas, comp.dilemma); // the dilemma
+  }
+  const mcqBank = JUDGMENT_MCQ_FALLBACK.map(mcqBankContent);
   if (format === "mcq") {
-    return JUDGMENT_MCQ_FALLBACK.slice(0, 6).map(mcqBankContent);
+    return cycleTo(mcqBank, comp.mcq);
   }
   return [
-    ...JUDGMENT_MCQ_FALLBACK.slice(0, 5).map(mcqBankContent),
-    ...OPEN_FALLBACK_ETHICAL.slice(0, 1).map(openItemContent),
+    ...cycleTo(mcqBank, comp.mcq),
+    ...cycleTo(OPEN_FALLBACK_ETHICAL.map(openItemContent), comp.open),
   ];
 }
 
@@ -763,8 +811,11 @@ export async function generateVariantItems(
   instrument: "ethical" | "critical",
   templateItems: DiagnosticItemRow[],
   format?: string | null,
+  length?: string | null,
 ): Promise<GeneratedItemContent[]> {
   const fmt = normalizeFormat(instrument, format);
+  const len = normalizeLength(length);
+  const comp = itemComposition(instrument, fmt, len);
   try {
     if (instrument === "critical") {
       const skills = templateItems
@@ -773,44 +824,49 @@ export async function generateVariantItems(
       const examples = templateItems.slice(0, 3).map((it) => it.prompt);
       const baseSkills = skills.length > 0 ? skills : ALL_SKILLS;
       if (fmt === "mcq") {
-        return await generateMcqItems(baseSkills, examples);
+        return await generateMcqItems(cycleTo(baseSkills, comp.mcq), examples);
       }
       if (fmt === "hybrid") {
-        const mcqSkills = baseSkills.slice(0, Math.max(1, baseSkills.length - 2));
-        const openSkills = baseSkills.slice(mcqSkills.length);
-        const mcq = await generateMcqItems(mcqSkills, examples);
+        const mcq = await generateMcqItems(cycleTo(baseSkills, comp.mcq), examples);
         const open = await generateOpenItems(
           "critical",
-          (openSkills.length > 0 ? openSkills : ALL_SKILLS.slice(0, 2)),
+          cycleTo(baseSkills, comp.open),
         );
         return [...mcq, ...open];
       }
-      // written — a few short open questions, one per skill (max 5).
-      const writtenSkills = baseSkills.slice(0, 5);
-      return await generateOpenItems("critical", writtenSkills);
+      // written — short open questions, cycling through the skill areas.
+      return await generateOpenItems("critical", cycleTo(baseSkills, comp.open));
     }
 
     // ethical
     if (fmt === "written") {
-      return await generateEthicalVariant(templateItems);
+      const dilemmas: GeneratedItemContent[] = [];
+      for (let i = 0; i < comp.dilemma; i++) {
+        dilemmas.push(...(await generateEthicalVariant(templateItems)));
+      }
+      return dilemmas;
     }
     if (fmt === "mcq") {
-      return await generateJudgmentMcqItems(6);
+      return await generateJudgmentMcqItems(comp.mcq);
     }
-    // hybrid — mostly judgment MCQ plus one short written answer.
-    const mcq = await generateJudgmentMcqItems(5);
-    const open = await generateOpenItems("ethical", [undefined]);
+    // hybrid — mostly judgment MCQ plus one or more short written answers.
+    const mcq = await generateJudgmentMcqItems(comp.mcq);
+    const open = await generateOpenItems(
+      "ethical",
+      new Array(comp.open).fill(undefined),
+    );
     return [...mcq, ...open];
   } catch (err) {
     logger.warn(
       {
         instrument,
         format: fmt,
+        length: len,
         err: err instanceof Error ? err.message : String(err),
       },
       "Reasoning item generation failed, using static fallback",
     );
-    return staticFallback(instrument, fmt, templateItems);
+    return staticFallback(instrument, fmt, len, templateItems);
   }
 }
 

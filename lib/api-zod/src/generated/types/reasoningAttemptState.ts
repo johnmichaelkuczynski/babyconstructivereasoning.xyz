@@ -19,6 +19,11 @@ export interface ReasoningAttemptState {
      * @nullable
      */
   format?: string | null;
+  /**
+     * The length tier used for this attempt (short | medium | long).
+     * @nullable
+     */
+  length?: string | null;
   startedAt: Date;
   /** @nullable */
   submittedAt?: Date | null;

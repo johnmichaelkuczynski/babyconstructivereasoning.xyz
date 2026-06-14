@@ -14,11 +14,12 @@ import type {
   ReasoningReviewItem,
   ReasoningMetric,
   StartReasoningBodyFormat,
+  StartReasoningBodyLength,
 } from "@workspace/api-client-react";
 import { AnswerInput } from "@/components/AnswerInput";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, AlertCircle, XCircle, ListChecks, PenLine, SplitSquareHorizontal } from "lucide-react";
+import { CheckCircle2, AlertCircle, XCircle, ListChecks, PenLine, SplitSquareHorizontal, Gauge, Layers, Mountain } from "lucide-react";
 
 const RATING_LABELS = ["No importance", "Little", "Some", "Much", "Great"];
 
@@ -83,6 +84,35 @@ function formatOptions(instrument: "ethical" | "critical"): FormatOption[] {
   ];
 }
 
+type LengthOption = {
+  value: StartReasoningBodyLength;
+  title: string;
+  description: string;
+  Icon: typeof Gauge;
+};
+
+// The three length tiers, independent of the chosen format.
+const LENGTH_OPTIONS: LengthOption[] = [
+  {
+    value: "short",
+    title: "Short",
+    description: "Just a few questions — a quick pass.",
+    Icon: Gauge,
+  },
+  {
+    value: "medium",
+    title: "Medium",
+    description: "A moderate number of questions.",
+    Icon: Layers,
+  },
+  {
+    value: "long",
+    title: "Long",
+    description: "A lot of questions — the full workout.",
+    Icon: Mountain,
+  },
+];
+
 export default function ReasoningRunner() {
   const params = useParams();
   const assessmentId = Number(params.id);
@@ -104,8 +134,10 @@ export default function ReasoningRunner() {
   // template; each retake returns freshly generated questions of the same kind.
   const [items, setItems] = useState<ReasoningItem[] | null>(null);
 
-  // Whether to show the format picker before starting/restarting an attempt.
-  const [showPicker, setShowPicker] = useState(false);
+  // Two-step picker before starting/restarting an attempt: first the answer
+  // format, then how many questions (length). null = no picker shown.
+  const [pickerStep, setPickerStep] = useState<"format" | "length" | null>(null);
+  const [pendingFormat, setPendingFormat] = useState<StartReasoningBodyFormat | null>(null);
   const decidedRef = useRef(false);
   const retakeRef = useRef(false);
 
@@ -144,23 +176,39 @@ export default function ReasoningRunner() {
     decidedRef.current = true;
     const summary = list.find((s) => s.id === assessmentId);
     if (summary && summary.status === "not_started") {
-      setShowPicker(true);
+      setPickerStep("format");
       return;
     }
     startAttempt.mutate({ assessmentId }, { onSuccess: applyStarted });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [list, assessmentId]);
 
+  // Step 1: remember the chosen format, then ask for the length.
   function pickFormat(format: StartReasoningBodyFormat) {
-    setShowPicker(false);
+    setPendingFormat(format);
+    setPickerStep("length");
+  }
+
+  // Step 2: with both format and length chosen, start the attempt. The picker
+  // stays visible until the attempt is created so a failure can recover.
+  function pickLength(length: StartReasoningBodyLength) {
+    if (!pendingFormat) return;
+    const format = pendingFormat;
     setError(null);
-    const data = retakeRef.current ? { retake: true, format } : { format };
+    const data = retakeRef.current
+      ? { retake: true, format, length }
+      : { format, length };
     startAttempt.mutate(
       { assessmentId, data },
       {
         onSuccess: (resp) => {
           retakeRef.current = false;
+          setPendingFormat(null);
+          setPickerStep(null);
           applyStarted(resp);
+        },
+        onError: () => {
+          setError("Could not start the assessment. Please try again.");
         },
       },
     );
@@ -250,7 +298,8 @@ export default function ReasoningRunner() {
     setOpenAnswers({});
     setDilemma({});
     retakeRef.current = true;
-    setShowPicker(true);
+    setPendingFormat(null);
+    setPickerStep("format");
   }
 
   function handleSubmit() {
@@ -278,9 +327,10 @@ export default function ReasoningRunner() {
     );
   }
 
-  // Format picker — shown before a fresh take or a retake.
-  if (showPicker) {
-    const options = formatOptions(assessment.instrument);
+  // Two-step picker — shown before a fresh take or a retake: first the answer
+  // format, then how many questions (length).
+  if (pickerStep) {
+    const onFormatStep = pickerStep === "format";
     return (
       <Layout>
         <div className="p-8 max-w-3xl mx-auto w-full flex flex-col gap-8">
@@ -288,29 +338,62 @@ export default function ReasoningRunner() {
             <h1 className="text-2xl font-serif font-bold text-primary">{assessment.title}</h1>
             {assessment.subtitle && <p className="text-sm text-muted-foreground mt-1">{assessment.subtitle}</p>}
             <p className="text-sm text-muted-foreground mt-3">
-              Choose how you'd like to answer this time. You can pick a different format next time.
+              {onFormatStep
+                ? "Step 1 of 2 — choose how you'd like to answer this time."
+                : "Step 2 of 2 — choose how many questions you'd like."}
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {options.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => pickFormat(opt.value)}
-                disabled={startAttempt.isPending}
-                className="text-left flex flex-col gap-2 rounded-lg border border-border p-5 hover:border-primary hover:bg-primary/5 transition-colors disabled:opacity-60"
-                data-testid={`format-${opt.value}`}
-              >
-                <opt.Icon className="w-6 h-6 text-primary" />
-                <span className="font-serif font-semibold">{opt.title}</span>
-                <span className="text-sm text-muted-foreground">{opt.description}</span>
-              </button>
-            ))}
-          </div>
+          {onFormatStep ? (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {formatOptions(assessment.instrument).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => pickFormat(opt.value)}
+                  className="text-left flex flex-col gap-2 rounded-lg border border-border p-5 hover:border-primary hover:bg-primary/5 transition-colors"
+                  data-testid={`format-${opt.value}`}
+                >
+                  <opt.Icon className="w-6 h-6 text-primary" />
+                  <span className="font-serif font-semibold">{opt.title}</span>
+                  <span className="text-sm text-muted-foreground">{opt.description}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {LENGTH_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => pickLength(opt.value)}
+                  disabled={startAttempt.isPending}
+                  className="text-left flex flex-col gap-2 rounded-lg border border-border p-5 hover:border-primary hover:bg-primary/5 transition-colors disabled:opacity-60"
+                  data-testid={`length-${opt.value}`}
+                >
+                  <opt.Icon className="w-6 h-6 text-primary" />
+                  <span className="font-serif font-semibold">{opt.title}</span>
+                  <span className="text-sm text-muted-foreground">{opt.description}</span>
+                </button>
+              ))}
+            </div>
+          )}
           {startAttempt.isPending && (
             <p className="text-sm text-muted-foreground">Preparing your questions…</p>
           )}
-          <div>
+          {error && (
+            <p className="text-sm text-destructive" data-testid="picker-error">{error}</p>
+          )}
+          <div className="flex gap-3">
+            {!onFormatStep && (
+              <Button
+                variant="outline"
+                onClick={() => setPickerStep("format")}
+                disabled={startAttempt.isPending}
+                data-testid="button-back-format"
+              >
+                Back
+              </Button>
+            )}
             <Link href="/reasoning">
               <Button variant="outline" data-testid="button-back-reasoning">Back to Assessments</Button>
             </Link>

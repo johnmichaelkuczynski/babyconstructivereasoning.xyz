@@ -198,6 +198,7 @@ export const diagnosticAttemptsTable = pgTable("diagnostic_attempts", {
     .references(() => diagnosticAssessmentsTable.id, { onDelete: "cascade" }),
   status: text("status").notNull().default("in_progress"), // in_progress | submitted
   format: text("format"), // mcq | hybrid | written — answer format the student picked at start
+  length: text("length"), // short | medium | long — number of questions the student picked at start
   passed: boolean("passed"),
   feedback: text("feedback"),
   responses: jsonb("responses"),

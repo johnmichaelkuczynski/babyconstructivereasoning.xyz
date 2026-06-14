@@ -641,7 +641,8 @@ export const StartReasoningAttemptParams = zod.object({
 
 export const StartReasoningAttemptBody = zod.object({
   "retake": zod.boolean().optional().describe('When true, begin a fresh attempt even if a previous attempt was already submitted. An in-progress attempt is still resumed.'),
-  "format": zod.enum(['mcq', 'hybrid', 'written']).optional().describe('The answer format the student picked for this attempt. \"mcq\" = multiple choice only (no typing); \"hybrid\" = mostly multiple choice plus 1-2 one-sentence written answers; \"written\" = short open answers (for Professional Judgment, the rate-and-rank dilemma). Applied only when creating a new attempt; ignored when resuming or reviewing. Defaults to the instrument\'s classic format.')
+  "format": zod.enum(['mcq', 'hybrid', 'written']).optional().describe('The answer format the student picked for this attempt. \"mcq\" = multiple choice only (no typing); \"hybrid\" = mostly multiple choice plus 1-2 one-sentence written answers; \"written\" = short open answers (for Professional Judgment, the rate-and-rank dilemma). Applied only when creating a new attempt; ignored when resuming or reviewing. Defaults to the instrument\'s classic format.'),
+  "length": zod.enum(['short', 'medium', 'long']).optional().describe('How many questions the attempt should contain. \"short\" = a few questions, \"medium\" = a moderate number, \"long\" = many questions. Independent of format. Applied only when creating a new attempt; ignored when resuming or reviewing. Defaults to \"medium\".')
 })
 
 export const StartReasoningAttemptResponse = zod.object({
@@ -649,6 +650,7 @@ export const StartReasoningAttemptResponse = zod.object({
   "assessmentId": zod.number(),
   "status": zod.enum(['in_progress', 'submitted']),
   "format": zod.string().nullish().describe('The answer format used for this attempt (mcq | hybrid | written).'),
+  "length": zod.string().nullish().describe('The length tier used for this attempt (short | medium | long).'),
   "startedAt": zod.coerce.date(),
   "submittedAt": zod.coerce.date().nullish(),
   "passed": zod.boolean().nullish(),

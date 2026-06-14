@@ -639,6 +639,11 @@ export interface ReasoningAttemptState {
      * @nullable
      */
   format?: string | null;
+  /**
+     * The length tier used for this attempt (short | medium | long).
+     * @nullable
+     */
+  length?: string | null;
   startedAt: string;
   /** @nullable */
   submittedAt?: string | null;
@@ -730,11 +735,25 @@ export const StartReasoningBodyFormat = {
   written: 'written',
 } as const;
 
+/**
+ * How many questions the attempt should contain. "short" = a few questions, "medium" = a moderate number, "long" = many questions. Independent of format. Applied only when creating a new attempt; ignored when resuming or reviewing. Defaults to "medium".
+ */
+export type StartReasoningBodyLength = typeof StartReasoningBodyLength[keyof typeof StartReasoningBodyLength];
+
+
+export const StartReasoningBodyLength = {
+  short: 'short',
+  medium: 'medium',
+  long: 'long',
+} as const;
+
 export interface StartReasoningBody {
   /** When true, begin a fresh attempt even if a previous attempt was already submitted. An in-progress attempt is still resumed. */
   retake?: boolean;
   /** The answer format the student picked for this attempt. "mcq" = multiple choice only (no typing); "hybrid" = mostly multiple choice plus 1-2 one-sentence written answers; "written" = short open answers (for Professional Judgment, the rate-and-rank dilemma). Applied only when creating a new attempt; ignored when resuming or reviewing. Defaults to the instrument's classic format. */
   format?: StartReasoningBodyFormat;
+  /** How many questions the attempt should contain. "short" = a few questions, "medium" = a moderate number, "long" = many questions. Independent of format. Applied only when creating a new attempt; ignored when resuming or reviewing. Defaults to "medium". */
+  length?: StartReasoningBodyLength;
 }
 
 export interface SubmitReasoningBody {

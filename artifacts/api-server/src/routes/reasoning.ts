@@ -198,6 +198,7 @@ router.post("/reasoning/assessments/:assessmentId/start", async (req, res): Prom
   }
   const retake = parsedBody.data.retake === true;
   const format = parsedBody.data.format ?? null;
+  const length = parsedBody.data.length ?? null;
 
   const [a] = await db
     .select()
@@ -252,6 +253,7 @@ router.post("/reasoning/assessments/:assessmentId/start", async (req, res): Prom
         assessmentId: reusable.assessmentId,
         status: reusable.status as "in_progress" | "submitted",
         format: reusable.format ?? null,
+        length: reusable.length ?? null,
         startedAt: reusable.startedAt.toISOString(),
         submittedAt: reusable.submittedAt?.toISOString() ?? null,
         passed: reusable.passed,
@@ -269,7 +271,7 @@ router.post("/reasoning/assessments/:assessmentId/start", async (req, res): Prom
 
   const [created] = await db
     .insert(diagnosticAttemptsTable)
-    .values({ assessmentId: id, status: "in_progress", format })
+    .values({ assessmentId: id, status: "in_progress", format, length })
     .returning();
   if (!created) {
     res.status(500).json({ error: "failed to create" });
@@ -286,6 +288,7 @@ router.post("/reasoning/assessments/:assessmentId/start", async (req, res): Prom
     a.instrument as Instrument,
     template,
     format,
+    length,
   );
   await insertAttemptItems(id, created.id, variant);
   const items = await loadItemsForAttempt(id, created.id);
@@ -296,6 +299,7 @@ router.post("/reasoning/assessments/:assessmentId/start", async (req, res): Prom
       assessmentId: created.assessmentId,
       status: "in_progress",
       format: created.format ?? null,
+      length: created.length ?? null,
       startedAt: created.startedAt.toISOString(),
       submittedAt: null,
       passed: null,
