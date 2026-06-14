@@ -12,11 +12,11 @@ import { CursorPointer } from './CursorPointer';
 
 export const SCENE_DURATIONS = {
   s1: 8000,
-  s2: 8000,
-  s3: 12000,
-  s4: 10000,
-  s5: 14000,
-  s6: 10000,
+  s2: 12000,
+  s3: 22000,
+  s4: 20000,
+  s5: 16000,
+  s6: 12000,
 };
 
 const SCENE_START_SEC: Record<string, number> = (() => {
@@ -90,7 +90,7 @@ export default function VideoTemplate({
       {/* Sidebar - persists across all scenes */}
       <div className="w-64 h-full border-r border-border bg-white flex flex-col pt-8 pb-4 shrink-0 z-20 shadow-sm relative">
         <div className="px-6 mb-8 flex items-center space-x-2">
-          <div className="w-8 h-8 bg-primary text-white flex items-center justify-center font-serif text-sm font-bold rounded">BA</div>
+          <div className="w-8 h-8 bg-primary text-white flex items-center justify-center font-serif text-sm font-bold rounded">CCR</div>
         </div>
 
         <nav className="flex-1 px-4 space-y-1">
@@ -107,7 +107,7 @@ export default function VideoTemplate({
         </nav>
 
         <div className="px-6 mt-auto">
-          <div className="text-xs text-muted-foreground uppercase font-semibold">Baby AI MVP</div>
+          <div className="text-xs text-muted-foreground uppercase font-semibold">CCR Platform</div>
         </div>
       </div>
 

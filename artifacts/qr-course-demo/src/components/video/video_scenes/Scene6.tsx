@@ -1,229 +1,130 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { StreamingText } from '../StreamingText';
 
 export function Scene6({ setCursorPos, setIsClicking }: { setCursorPos: (pos: {x: string, y: string}) => void, setIsClicking: (val: boolean) => void }) {
   const [phase, setPhase] = useState(0);
 
   useEffect(() => {
-    // 0-1.5s: Cursor to sidebar "Assignments", clicks.
-    // 1.5-3.0s: Cards stagger-fade in.
-    // 3.0-4.5s: Cursor to "Homework 1.1", hover, click.
-    // 4.5-6.0s: Crossfade to assignment results.
-    // 6.0-8.0s: AI feedback streams in.
-    // 8.0-10s: AI detection appears. Scene ends.
-
-    setCursorPos({ x: '70vw', y: '60vh' }); // Start where Scene 5 left off
+    setCursorPos({ x: '10vw', y: '30vh' }); 
     
     const t1 = setTimeout(() => {
-      setCursorPos({ x: '10vw', y: '23vh' }); // Move to Assignments nav
-    }, 500);
-
-    const t2 = setTimeout(() => {
       setIsClicking(true);
-      setPhase(1); // Nav clicked
-    }, 1300);
-
-    const t3 = setTimeout(() => {
-      setIsClicking(false);
-      setPhase(2); // Crossfade to Assignments
+      setPhase(1); 
     }, 1500);
 
-    const t4 = setTimeout(() => {
-      setPhase(3); // Cards stagger in
-    }, 2000);
+    const t2 = setTimeout(() => {
+      setIsClicking(false);
+      setPhase(2); 
+    }, 1700);
 
-    const t5 = setTimeout(() => {
-      setCursorPos({ x: '60vw', y: '40vh' }); // Move to HW 1.1 review
+    const t3 = setTimeout(() => {
+      setPhase(3); 
     }, 3000);
 
-    const t6 = setTimeout(() => {
-      setIsClicking(true);
-      setPhase(4); // Hover effect & click
-    }, 4200);
-
-    const t7 = setTimeout(() => {
-      setIsClicking(false);
-      setPhase(5); // Crossfade to results
-    }, 4500);
-
-    const t8 = setTimeout(() => {
-      setPhase(6); // Feedback stream starts
-    }, 6000);
-
-    const t9 = setTimeout(() => {
-      setPhase(7); // AI detection appears
-      setCursorPos({ x: '95vw', y: '90vh' }); // Move cursor away
+    const t4 = setTimeout(() => {
+      setPhase(4); 
     }, 8000);
 
     return () => {
       clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4);
-      clearTimeout(t5); clearTimeout(t6); clearTimeout(t7); clearTimeout(t8); clearTimeout(t9);
     };
   }, [setCursorPos, setIsClicking]);
 
   return (
     <motion.div 
-      className="absolute inset-0 w-full h-full bg-background"
+      className="absolute inset-0 w-full h-full bg-[#fdfaf5]"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0, transition: { duration: 0.5 } }} // gentle fade at loop end
+      exit={{ opacity: 0 }}
     >
       <AnimatePresence mode="wait">
-        {phase >= 2 && phase < 5 ? (
+        {phase >= 2 && phase < 4 && (
           <motion.div 
-            key="assignmentsList"
+            key="analytics"
             className="w-full h-full p-12 overflow-y-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.4 }}
+            exit={{ opacity: 0, filter: 'blur(10px)', scale: 1.05 }}
+            transition={{ duration: 0.8 }}
           >
-            <h1 className="text-4xl font-serif text-primary mb-2 tracking-tight">Assignments</h1>
-            <p className="text-muted-foreground mb-12">Complete your homework, unit test, and final exam.</p>
+            <h1 className="text-4xl font-serif text-[#1e293b] mb-8 tracking-tight">Analytics & Diagnostics</h1>
             
-            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">Unit 1</h3>
-            
-            <div className="space-y-4">
-              {/* Card 1 */}
-              <motion.div 
-                className={`bg-white border p-6 rounded-xl flex items-center justify-between shadow-sm transition-colors ${phase >= 4 ? 'bg-muted/50 border-primary/30' : 'border-border'}`}
-                initial={{ opacity: 0, x: -20 }}
-                animate={phase >= 3 ? { opacity: 1, x: 0 } : {}}
-                transition={{ duration: 0.4 }}
-              >
-                <div>
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Homework</div>
-                  <h4 className="font-serif text-lg text-primary mb-1">Homework 1.1 — What AI is (and isn't)</h4>
-                  <div className="text-sm text-muted-foreground">4 problems</div>
-                </div>
-                <div className="flex items-center space-x-6">
-                  <div className="text-right">
-                    <div className="text-xs text-muted-foreground">Score</div>
-                    <div className="font-medium text-emerald-600">100%</div>
-                  </div>
-                  <div className="px-4 py-2 border border-border rounded-lg text-sm font-medium bg-background text-foreground shadow-sm cursor-pointer">
-                    Review Results
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Card 2 */}
-              <motion.div 
-                className="bg-white border border-border p-6 rounded-xl flex items-center justify-between shadow-sm opacity-70"
-                initial={{ opacity: 0, x: -20 }}
-                animate={phase >= 3 ? { opacity: 1, x: 0 } : {}}
-                transition={{ duration: 0.4, delay: 0.1 }}
-              >
-                <div>
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Homework</div>
-                  <h4 className="font-serif text-lg text-primary mb-1">Homework 1.2 — Neural networks, language models, and using AI well</h4>
-                  <div className="text-sm text-muted-foreground">4 problems</div>
-                </div>
-                <div className="flex items-center space-x-6">
-                  <div className="text-right">
-                    <div className="text-xs text-muted-foreground">Score</div>
-                    <div className="font-medium text-emerald-600">100%</div>
-                  </div>
-                  <div className="px-4 py-2 border border-border rounded-lg text-sm font-medium bg-background text-foreground shadow-sm">
-                    Review Results
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Card 3 */}
-              <motion.div 
-                className="bg-white border border-border p-6 rounded-xl flex items-center justify-between shadow-sm opacity-70"
-                initial={{ opacity: 0, x: -20 }}
-                animate={phase >= 3 ? { opacity: 1, x: 0 } : {}}
-                transition={{ duration: 0.4, delay: 0.2 }}
-              >
-                <div>
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Test</div>
-                  <h4 className="font-serif text-lg text-primary mb-1">Unit 1 Test</h4>
-                  <div className="text-sm text-muted-foreground">8 problems · 30 min</div>
-                </div>
-                <div className="flex items-center space-x-6">
-                  <div className="text-right">
-                    <div className="text-xs text-muted-foreground">Score</div>
-                    <div className="font-medium text-emerald-600">100%</div>
-                  </div>
-                  <div className="px-4 py-2 border border-border rounded-lg text-sm font-medium bg-background text-foreground shadow-sm">
-                    Review Results
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
-        ) : phase >= 5 ? (
-          <motion.div 
-            key="assignmentDetail"
-            className="w-full h-full p-12 overflow-y-auto"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
-              <span>Assignments</span>
-              <span>/</span>
-              <span className="text-primary font-medium">Homework 1.1</span>
-            </div>
-            
-            <h1 className="text-3xl font-serif text-primary mb-8 tracking-tight">Review: Homework 1.1</h1>
-
-            <div className="bg-white border border-border rounded-xl shadow-sm p-8 mb-6 relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-emerald-100 text-emerald-700 px-4 py-1.5 text-xs font-bold tracking-widest rounded-bl-xl border-b border-l border-emerald-200">GRADED</div>
-              
-              <h3 className="font-medium text-lg mb-6 max-w-2xl text-foreground">Q1. Why is a face-unlock feature considered AI, while a thermostat following a fixed temperature rule is not?</h3>
-              
-              <div className="mb-6 max-w-2xl">
-                <div className="text-xs text-muted-foreground mb-2">Your answer:</div>
-                <div className="px-6 py-3 bg-muted/30 border border-border rounded-lg text-base">Because face unlock makes a learned guess from data it has seen, while the thermostat just follows one fixed rule a person wrote.</div>
+            <div className="grid grid-cols-4 gap-4 mb-8">
+              <div className="bg-white border border-[#e2e8f0] p-6 rounded-xl shadow-sm text-center">
+                <div className="text-xs uppercase text-[#64748b] font-bold mb-2">Attempts</div>
+                <div className="text-4xl font-light text-[#1e293b]">24</div>
               </div>
-
-              <AnimatePresence>
-                {phase >= 6 && (
-                  <motion.div 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="bg-blue-50 border border-blue-100 rounded-lg p-5"
-                  >
-                    <div className="flex items-center space-x-2 text-blue-800 font-bold text-xs mb-2 uppercase tracking-widest">
-                      <div className="w-5 h-5 rounded bg-blue-200 flex items-center justify-center">✦</div>
-                      <span>AI Tutor Feedback</span>
-                    </div>
-                    <div className="text-sm text-blue-900 leading-relaxed">
-                      <StreamingText text="Correct. The key difference is that AI makes a learned guess from data, while automation follows fixed rules written in advance. Face unlock adapts to what it sees; the thermostat always does the same thing. Clear and well stated." delay={0} />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <AnimatePresence>
-                {phase >= 7 && (
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="mt-4 flex items-center space-x-2 text-xs"
-                  >
-                    <motion.div 
-                      className="w-2 h-2 rounded-full bg-emerald-500"
-                      animate={{ opacity: [1, 0.5, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    />
-                    <span className="text-muted-foreground">AI-DETECTION: Human-written response · confidence 94%</span>
-                    <span className="ml-2 px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full font-medium">AI check: passed</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <div className="bg-white border border-[#e2e8f0] p-6 rounded-xl shadow-sm text-center">
+                <div className="text-xs uppercase text-[#64748b] font-bold mb-2">Accuracy</div>
+                <div className="text-4xl font-light text-[#1e293b]">87%</div>
+              </div>
+              <div className="bg-white border border-[#e2e8f0] p-6 rounded-xl shadow-sm text-center">
+                <div className="text-xs uppercase text-[#64748b] font-bold mb-2">Streak</div>
+                <div className="text-4xl font-light text-[#1e293b]">5 Days</div>
+              </div>
+              <div className="bg-[#1e293b] p-6 rounded-xl shadow-sm text-center text-white">
+                <div className="text-xs uppercase font-bold mb-2 opacity-80">Reasoning Instrument</div>
+                <div className="text-xl font-serif mt-2">Phase 3</div>
+              </div>
             </div>
-            
-            <div className="bg-white border border-border rounded-xl shadow-sm p-8 opacity-50">
-              <h3 className="font-medium text-lg mb-6 max-w-2xl text-foreground">Q2. Why is today's AI described as "narrow" rather than general...</h3>
-              <div className="text-sm text-muted-foreground">Problem content hidden...</div>
+
+            <div className="bg-white border border-[#e2e8f0] rounded-xl shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-[#e2e8f0] bg-[#f1f5f9]">
+                <h3 className="font-serif text-xl text-[#1e293b]">Per-Section Mastery</h3>
+              </div>
+              
+              <div className="divide-y divide-[#e2e8f0]">
+                {[
+                  { topic: '1.1 The Fecund Lead', status: 'STRONG', color: 'text-emerald-700 bg-emerald-50' },
+                  { topic: '1.2 Model Selection by Explanatory Yield', status: 'DEVELOPING', color: 'text-amber-700 bg-amber-50' },
+                  { topic: '1.3 Parsimony as a Live Constraint', status: 'UNTESTED', color: 'text-[#64748b] bg-[#f1f5f9]' },
+                ].map((row, i) => (
+                  <motion.div 
+                    key={i}
+                    className="grid grid-cols-12 gap-4 px-6 py-4 items-center"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={phase >= 3 ? { opacity: 1, x: 0 } : {}}
+                    transition={{ delay: phase >= 3 ? i * 0.1 : 0 }}
+                  >
+                    <div className="col-span-8 font-medium text-[#1e293b]">{row.topic}</div>
+                    <div className="col-span-4 text-right">
+                      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold tracking-wider ${row.color}`}>
+                        {row.status}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </motion.div>
-        ) : null}
+        )}
+
+        {phase >= 4 && (
+          <motion.div 
+            key="outro"
+            className="absolute inset-0 bg-[#1e293b] flex flex-col items-center justify-center text-center p-12"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1 }}
+          >
+            <motion.h1 
+              className="text-6xl md:text-8xl font-serif font-bold text-white mb-6"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.5, duration: 1 }}
+            >
+              CCR
+            </motion.h1>
+            <motion.p 
+              className="text-2xl text-white/80 max-w-3xl italic font-serif"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.5, duration: 1 }}
+            >
+              "Where the strongest honest conclusion, not the safest hedge, earns the grade."
+            </motion.p>
+          </motion.div>
+        )}
       </AnimatePresence>
     </motion.div>
   );

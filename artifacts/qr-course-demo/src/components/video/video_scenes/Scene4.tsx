@@ -3,157 +3,104 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export function Scene4({ setCursorPos, setIsClicking }: { setCursorPos: (pos: {x: string, y: string}) => void, setIsClicking: (val: boolean) => void }) {
   const [phase, setPhase] = useState(0);
-  const [kpi1, setKpi1] = useState(0);
-  const [kpi2, setKpi2] = useState(0);
-  const [kpi3, setKpi3] = useState(0);
-  const [kpi4, setKpi4] = useState(0);
-  const [kpi5, setKpi5] = useState(0);
 
   useEffect(() => {
-    // 0-1.5s: Cursor to sidebar "Analytics", clicks. Crossfade.
-    // 1.5-4.0s: KPI tiles count up.
-    // 4.0-6.0s: Topic Mastery rows stagger in.
-    // 6.0-8.5s: Cursor to "Querying data with SQL", click.
-    // 8.5-10s: Crossfade begins.
-
-    setCursorPos({ x: '65vw', y: '90vh' }); // Start where Scene 3 left off
+    setCursorPos({ x: '65vw', y: '90vh' }); 
     
     const t1 = setTimeout(() => {
-      setCursorPos({ x: '10vw', y: '30vh' }); // Move to Analytics nav
+      setCursorPos({ x: '10vw', y: '30vh' }); 
     }, 500);
 
     const t2 = setTimeout(() => {
       setIsClicking(true);
-      setPhase(1); // Nav clicked
-    }, 1300);
+      setPhase(1); 
+    }, 1500);
 
     const t3 = setTimeout(() => {
       setIsClicking(false);
-      setPhase(2); // Crossfade to Analytics content
-    }, 1500);
+      setPhase(2); 
+    }, 1700);
 
-    // Number ticker logic
     const t4 = setTimeout(() => {
-      let step = 0;
-      const interval = setInterval(() => {
-        step += 1;
-        setKpi1(Math.min(100, Math.floor(step * 4)));
-        setKpi2(Math.min(100, Math.floor(step * 3.8)));
-        setKpi3(Math.min(24, Math.floor(step * 0.9)));
-        setKpi4(Math.min(4, Math.floor(step * 0.2)));
-        setKpi5(Math.min(1, Math.floor(step * 0.05)));
-        if (step > 30) clearInterval(interval);
-      }, 50);
-    }, 1500);
-
-    const t5 = setTimeout(() => {
-      setPhase(3); // Rows stagger in
+      setCursorPos({ x: '70vw', y: '50vh' }); 
     }, 4000);
 
-    const t6 = setTimeout(() => {
-      setCursorPos({ x: '40vw', y: '65vh' }); // Move to mastery row
-    }, 6000);
-
-    const t7 = setTimeout(() => {
-      setPhase(4); // Hover effect
+    const t5 = setTimeout(() => {
       setIsClicking(true);
-    }, 8300);
+      setPhase(3); 
+    }, 5500);
 
-    const t8 = setTimeout(() => {
+    const t6 = setTimeout(() => {
       setIsClicking(false);
-      setPhase(5); // Click flash & end
-    }, 8500);
+      setPhase(4); 
+    }, 6000);
 
     return () => {
       clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4);
-      clearTimeout(t5); clearTimeout(t6); clearTimeout(t7); clearTimeout(t8);
+      clearTimeout(t5); clearTimeout(t6);
     };
   }, [setCursorPos, setIsClicking]);
 
-  const rows = [
-    { topic: "What AI is (and isn't)", week: 'Unit 1', att: 0, acc: 0, stat: 'UNTESTED', statColor: 'text-muted-foreground bg-muted' },
-    { topic: 'Rules vs. learning', week: 'Unit 1', att: 1, acc: 1, stat: 'STRONG', statColor: 'text-emerald-700 bg-emerald-50' },
-    { topic: 'Data and training', week: 'Unit 1', att: 1, acc: 1, stat: 'STRONG', statColor: 'text-emerald-700 bg-emerald-50' },
-    { topic: 'Pattern recognition', week: 'Unit 1', att: 0, acc: 0, stat: 'UNTESTED', statColor: 'text-muted-foreground bg-muted' },
-    { topic: 'Neural networks and deep learning', week: 'Unit 1', att: 0, acc: 0, stat: 'UNTESTED', statColor: 'text-muted-foreground bg-muted' },
-  ];
-
   return (
     <motion.div 
-      className="absolute inset-0 w-full h-full bg-background"
+      className="absolute inset-0 w-full h-full bg-[#fdfaf5]"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
       <AnimatePresence>
-        {phase >= 2 && (
+        {phase >= 2 && phase < 4 && (
           <motion.div 
             className="w-full h-full p-12 overflow-y-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h1 className="text-4xl font-serif text-primary mb-8 tracking-tight">Analytics</h1>
+            <h1 className="text-4xl font-serif text-[#1e293b] mb-4 tracking-tight">Homework 1.1</h1>
+            <p className="text-[#64748b] mb-8 max-w-2xl text-lg">Pick how you want to answer. You get <strong>one graded attempt</strong> — once you submit, this homework locks.</p>
             
-            <div className="grid grid-cols-5 gap-4 mb-10">
-              <div className="bg-white border border-border p-5 rounded-xl shadow-sm">
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Course Average</div>
-                <div className="text-3xl font-light">{kpi1}%</div>
+            <div className="grid grid-cols-3 gap-6 mb-10">
+              <div className="bg-white border border-[#e2e8f0] p-6 rounded-xl shadow-sm hover:border-[#1e293b] transition-colors">
+                <h4 className="font-serif text-xl mb-2 text-[#1e293b]">Multiple Choice</h4>
+                <p className="text-[#64748b] text-sm mb-4">Pick the strongest conclusion for each scenario. No typing.</p>
+                <div className="text-xs font-semibold text-[#64748b] uppercase tracking-wider">8 Questions</div>
               </div>
-              <div className="bg-white border border-border p-5 rounded-xl shadow-sm">
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Practice Accuracy</div>
-                <div className="text-3xl font-light">{kpi2}%</div>
+              <div className="bg-white border border-[#e2e8f0] p-6 rounded-xl shadow-sm hover:border-[#1e293b] transition-colors">
+                <h4 className="font-serif text-xl mb-2 text-[#1e293b]">Hybrid</h4>
+                <p className="text-[#64748b] text-sm mb-4">Mostly multiple choice, with a few one-to-two sentence written answers.</p>
+                <div className="text-xs font-semibold text-[#64748b] uppercase tracking-wider">6 Questions</div>
               </div>
-              <div className="bg-white border border-border p-5 rounded-xl shadow-sm">
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Assignments</div>
-                <div className="text-3xl font-light">{kpi3}</div>
-              </div>
-              <div className="bg-white border border-border p-5 rounded-xl shadow-sm">
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Practice Count</div>
-                <div className="text-3xl font-light">{kpi4}</div>
-              </div>
-              <div className="bg-white border border-border p-5 rounded-xl shadow-sm">
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Streak (Days)</div>
-                <div className="text-3xl font-light">{kpi5}</div>
+              <motion.div 
+                className={`bg-white border p-6 rounded-xl shadow-sm transition-colors cursor-pointer ${phase >= 3 ? 'border-[#1e293b] bg-[#f1f5f9]' : 'border-[#e2e8f0]'}`}
+              >
+                <h4 className="font-serif text-xl mb-2 text-[#1e293b]">Written</h4>
+                <p className="text-[#64748b] text-sm mb-4">Short written answers — commit to a conclusion and the test that would falsify it.</p>
+                <div className="text-xs font-semibold text-[#64748b] uppercase tracking-wider">4 Questions</div>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+
+        {phase >= 4 && (
+          <motion.div 
+            className="w-full h-full p-12"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <div className="flex justify-between items-center border-b border-[#e2e8f0] pb-4 mb-8">
+              <div>
+                <h1 className="text-3xl font-serif font-bold text-[#1e293b]">Homework 1.1</h1>
+                <p className="text-sm text-[#64748b]">Question 1 of 4</p>
               </div>
             </div>
-
-            <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
-              <div className="px-6 py-5 border-b border-border bg-background/50">
-                <h3 className="font-serif text-xl">Topic Mastery</h3>
-              </div>
-              
-              <div className="w-full">
-                <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/20">
-                  <div className="col-span-5">Topic</div>
-                  <div className="col-span-2">Unit</div>
-                  <div className="col-span-2">Attempts</div>
-                  <div className="col-span-1">Accuracy</div>
-                  <div className="col-span-2 text-right">Status</div>
-                </div>
-                
-                <div className="divide-y divide-border">
-                  {rows.map((row, i) => (
-                    <motion.div 
-                      key={i}
-                      className={`grid grid-cols-12 gap-4 px-6 py-4 items-center transition-colors ${i === 2 && phase >= 4 ? 'bg-primary/5 cursor-pointer' : ''}`}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={phase >= 3 ? { opacity: 1, y: 0 } : {}}
-                      transition={{ delay: phase >= 3 ? i * 0.06 : 0, duration: 0.4 }}
-                    >
-                      <div className="col-span-5 font-medium text-sm text-primary">{row.topic}</div>
-                      <div className="col-span-2 text-sm text-muted-foreground">{row.week}</div>
-                      <div className="col-span-2 text-sm">{row.att}</div>
-                      <div className="col-span-1 text-sm">{row.acc}%</div>
-                      <div className="col-span-2 text-right">
-                        <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider ${row.statColor}`}>
-                          {row.stat}
-                        </span>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
+            
+            <div className="prose prose-slate max-w-3xl text-lg text-[#1e293b] mb-8">
+              <p>Scenario: A study finds that regions with more coffee shops have higher rates of patent filings per capita. Provide a fecund lead that explains this, and state exactly what data would falsify your model.</p>
+            </div>
+            
+            <div className="w-full h-40 border border-[#e2e8f0] rounded-xl bg-white shadow-inner p-4 text-[#64748b] text-lg">
+              Type your answer...
             </div>
           </motion.div>
         )}

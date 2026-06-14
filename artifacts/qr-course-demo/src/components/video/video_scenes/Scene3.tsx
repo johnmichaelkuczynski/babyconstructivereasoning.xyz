@@ -8,89 +8,61 @@ export function Scene3({ setCursorPos, setIsClicking }: { setCursorPos: (pos: {x
   const [phase, setPhase] = useState(0);
 
   useEffect(() => {
-    // 0-2.0s Cursor into textarea, types "Why isn't a normative claim just an opinion?"
-    // 2.0-2.5s Cursor to send button, clicks.
-    // 2.5-3.5s Pulsing dots.
-    // 3.5-10s AI response streams.
-    // 10-12s Cursor types "What about intrinsic value?"
-
-    setCursorPos({ x: '60vw', y: '16vh' }); // Start at Tutor tab
+    setCursorPos({ x: '60vw', y: '16vh' }); 
     
     const t1 = setTimeout(() => {
-      setCursorPos({ x: '60vw', y: '85vh' }); // Move to textarea
-      setPhase(1); // Start typing question 1
-    }, 500);
+      setCursorPos({ x: '60vw', y: '85vh' }); 
+      setPhase(1); 
+    }, 1000);
 
     const t2 = setTimeout(() => {
-      setCursorPos({ x: '92vw', y: '88vh' }); // Move to send button
-    }, 2000);
+      setCursorPos({ x: '92vw', y: '88vh' }); 
+    }, 4000);
 
     const t3 = setTimeout(() => {
       setIsClicking(true);
-      setPhase(2); // Show user bubble, start AI typing
-    }, 2400);
+      setPhase(2); 
+    }, 4500);
 
     const t4 = setTimeout(() => {
       setIsClicking(false);
-      setPhase(3); // AI streaming
-    }, 3400);
-
-    const t5 = setTimeout(() => {
-      setCursorPos({ x: '65vw', y: '90vh' }); // Move back to textarea
-    }, 10000);
-
-    const t6 = setTimeout(() => {
-      setPhase(4); // Start typing question 2
-    }, 10500);
+      setPhase(3); 
+    }, 5500);
 
     return () => {
-      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
-      clearTimeout(t4); clearTimeout(t5); clearTimeout(t6);
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4);
     };
   }, [setCursorPos, setIsClicking]);
 
   return (
     <motion.div 
-      className="absolute inset-0 w-full h-full bg-background flex"
+      className="absolute inset-0 w-full h-full bg-[#fdfaf5] flex"
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      {/* Left Pane (Static from previous) */}
-      <div className="w-1/2 h-full border-r border-border p-12 overflow-hidden flex flex-col relative opacity-50">
-        <div className="text-xs font-bold tracking-widest text-muted-foreground mb-4">UNIT 1</div>
-        <h1 className="text-3xl font-serif text-primary mb-8">1.1 What AI is (and isn't)</h1>
-        <div className="prose prose-sm max-w-none text-foreground/80 space-y-6">
-          <h2 className="font-serif text-2xl text-primary">A machine that makes guesses</h2>
-          <p>At its heart, AI is a computer program that makes smart-seeming guesses or decisions from information. It's not magic, and it's not a tiny mind inside the computer.</p>
+      <div className="w-1/2 h-full border-r border-[#e2e8f0] p-12 overflow-hidden flex flex-col relative opacity-50">
+        <div className="text-xs font-bold tracking-widest text-[#64748b] mb-4 uppercase">UNIT 1</div>
+        <h1 className="text-4xl font-serif text-[#1e293b] mb-6">1.1 The Fecund Lead</h1>
+        <div className="prose prose-sm max-w-none text-[#334155] space-y-6 text-lg">
+          <p>A barren hypothesis merely retrofits itself to what is already known, offering no predictive leverage. The fecund lead, by contrast, takes risks. It commits to a specific underlying mechanism that makes it highly falsifiable.</p>
         </div>
       </div>
 
-      {/* Right Pane: Tutor Chat */}
       <div className="w-1/2 h-full bg-white flex flex-col relative">
-        <div className="flex border-b border-border px-4 pt-4 bg-background">
-          <div className="px-6 py-3 font-medium text-sm border-b-2 border-primary text-primary">Ask the tutor</div>
-          <div className="px-6 py-3 font-medium text-sm border-b-2 border-transparent text-muted-foreground">Practice on this</div>
+        <div className="flex border-b border-[#e2e8f0] px-4 pt-4 bg-[#fdfaf5]">
+          <div className="px-6 py-3 font-medium text-sm border-b-2 border-[#1e293b] text-[#1e293b]">Ask the tutor</div>
+          <div className="px-6 py-3 font-medium text-sm border-b-2 border-transparent text-[#64748b]">Practice on this</div>
         </div>
 
         <div className="flex-1 p-8 relative flex flex-col overflow-hidden">
-          
           <div className="flex-1 overflow-y-auto space-y-6 flex flex-col">
-            {phase < 2 && (
-              <motion.div exit={{ opacity: 0, y: -20 }} className="mt-auto">
-                <div className="mb-4 text-xs font-semibold text-muted-foreground uppercase tracking-widest">Starter questions for this section</div>
-                <div className="flex flex-wrap gap-2 mb-6">
-                  <div className="px-3 py-1.5 rounded-full border border-border text-sm text-primary bg-muted/30">How is automation different from intelligence?</div>
-                </div>
-              </motion.div>
-            )}
-
             {phase >= 2 && (
               <motion.div 
                 initial={{ opacity: 0, y: 20, scale: 0.95 }} 
                 animate={{ opacity: 1, y: 0, scale: 1 }} 
-                className="self-end max-w-[85%] bg-primary text-white p-4 rounded-2xl rounded-tr-sm shadow-sm mt-auto"
+                className="self-end max-w-[85%] bg-[#1e293b] text-white p-4 rounded-2xl rounded-tr-sm shadow-sm mt-auto"
               >
-                How is automation different from intelligence?
+                But what if the evidence points to a safer, less bold claim?
               </motion.div>
             )}
 
@@ -108,29 +80,24 @@ export function Scene3({ setCursorPos, setIsClicking }: { setCursorPos: (pos: {x
               <motion.div 
                 initial={{ opacity: 0, y: 10 }} 
                 animate={{ opacity: 1, y: 0 }} 
-                className="self-start w-[85%] bg-muted/30 border border-border p-5 rounded-2xl rounded-tl-sm text-[15px] leading-relaxed shadow-sm"
+                className="self-start w-[85%] bg-[#f1f5f9] border border-[#e2e8f0] p-5 rounded-2xl rounded-tl-sm text-[15px] leading-relaxed shadow-sm text-[#1e293b]"
               >
-                <StreamingText text="Great question. Automation follows fixed steps a person wrote in advance — like a thermostat switching on at a set temperature. Intelligence is meant to handle new situations nobody wrote exact rules for, by learning patterns from data and making a guess. The thermostat always does the same thing; AI adapts its answer to what it sees." delay={0} />
+                <StreamingText text="Then you commit to that claim—but only exactly as far as the evidence dictates. The goal isn't to be bold for the sake of being bold. The goal is to make the richest falsifiable statement the data supports, rather than padding your answer with hedges that make it impossible to prove you wrong." delay={0} />
               </motion.div>
             )}
           </div>
 
-          <div className="mt-6 w-full min-h-24 border border-border rounded-xl bg-background p-3 flex items-end shadow-inner relative z-10">
+          <div className="mt-6 w-full min-h-24 border border-[#e2e8f0] rounded-xl bg-[#fdfaf5] p-3 flex items-end shadow-inner relative z-10">
             <div className="w-full flex justify-between items-center pr-2">
-              <div className="text-foreground text-[15px] font-medium pl-2 relative w-full h-full flex items-center">
-                {phase === 1 && <TypewriterText text="How is automation different from intelligence?" speed={25} />}
-                {phase >= 2 && phase < 4 && <span className="text-muted-foreground font-normal">Ask a question about this section...</span>}
-                {phase >= 4 && <TypewriterText text="So is a spam filter automation or AI?" speed={20} />}
-                {((phase >= 1 && phase < 2) || phase >= 4) && (
-                  <motion.div className="w-0.5 h-5 bg-primary ml-1" animate={{ opacity: [1, 0] }} transition={{ repeat: Infinity, duration: 0.8 }} />
-                )}
+              <div className="text-[#1e293b] text-[15px] font-medium pl-2 relative w-full h-full flex items-center">
+                {phase === 1 && <TypewriterText text="But what if the evidence points to a safer, less bold claim?" speed={25} />}
+                {phase >= 2 && <span className="text-[#64748b] font-normal">Ask a question about this section...</span>}
               </div>
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors shrink-0 ${phase === 1 ? 'bg-primary text-white cursor-pointer shadow-md' : 'bg-muted text-muted-foreground opacity-50'}`}>
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors shrink-0 ${phase === 1 ? 'bg-[#1e293b] text-white cursor-pointer shadow-md' : 'bg-[#e2e8f0] text-[#64748b] opacity-50'}`}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </motion.div>
