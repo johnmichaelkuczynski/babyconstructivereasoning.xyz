@@ -4,10 +4,13 @@
 // A single subject-relevant instrument — "ccr" (Constructive Critical
 // Reasoning) — administered at four phases (before the course, one-third
 // through, two-thirds through, and after) with freshly generated items per
-// attempt. CCR measures whether a student draws the STRONGEST affirmative
-// conclusion a body of data actually supports: the best answer commits to the
-// richest, most-falsifiable model and/or names a cheap decisive test, while the
-// failure mode is the timid "you can't conclude anything" dodge.
+// attempt. CCR measures whether a student draws the STRONGEST conclusion the
+// AVAILABLE EVIDENCE actually warrants: the best answer commits to the
+// evidence-supported model and/or names a cheap decisive test. The failure
+// modes are reckless overreach and passive give-up. Every scenario must carry
+// real discriminating evidence — when evidence is genuinely insufficient,
+// declining to guess (and naming the test that would settle it) is honest, not
+// a dodge, so no-data/equal-fit scenarios are never used.
 //
 // Every item is MCQ or short open-response. All items are ORIGINAL and
 // scenario-based. For every MCQ the genuinely-best option is written FIRST; at
@@ -61,7 +64,7 @@ export type DiagnosticSeed = {
 };
 
 const CCR_INSTRUCTIONS =
-  "Answer each question by choosing the best option (or, for written questions, typing a short 1-2 sentence answer). These questions measure constructive critical reasoning — drawing the strongest, most-testable conclusion the evidence actually supports, rather than dodging with 'you can't conclude anything.' This is practice only: it never affects your grade, and you can retake it any time with fresh questions.";
+  "Answer each question by choosing the best option (or, for written questions, typing a short 1-2 sentence answer). These questions measure constructive critical reasoning — drawing the strongest, most-testable conclusion the evidence actually supports, and, when the evidence is genuinely insufficient, naming the test that would settle it. This is practice only: it never affects your grade, and you can retake it any time with fresh questions.";
 
 // ===========================================================================
 // SEED — one CCR instrument × four phases (4 assessments)

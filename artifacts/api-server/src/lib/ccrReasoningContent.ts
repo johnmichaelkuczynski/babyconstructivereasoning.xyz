@@ -2,17 +2,20 @@
 // Original content for the embedded Constructive Critical Reasoning (CCR)
 // diagnostic assessment (instrument = "ccr").
 //
-// CCR is the discipline of drawing the STRONGEST affirmative conclusion a body
-// of data actually supports. The best answer commits to the richest,
-// most-falsifiable model and/or names a cheap decisive test; the failure mode
-// is the timid "you can't conclude anything" dodge (or a reckless overreach
-// the data defeats).
+// CCR is the discipline of drawing the STRONGEST conclusion the AVAILABLE
+// EVIDENCE actually warrants. The best answer commits to the conclusion the
+// given evidence supports and/or names a cheap decisive test; the failure modes
+// are a reckless overreach the evidence defeats and a passive give-up. Every
+// scenario must contain real discriminating evidence — when the evidence is
+// genuinely insufficient, declining to guess is the HONEST answer, not a dodge,
+// so we never write equal-fit/no-data scenarios that punish it.
 //
 // These are DIAGNOSTICS: ungraded practice, retakable, never repeating. Items
 // are normal single-correct multiple-choice (NOT partial credit) plus short
 // open-response. For every MCQ the genuinely-best option is written FIRST,
-// followed by three plausible distractors (one of which is the tempting
-// "can't conclude" dodge). Options are rotated at seed/generation time.
+// followed by three plausible distractors. The "can't conclude anything"
+// refusal appears as a distractor ONLY where the scenario truly has enough
+// evidence to decide. Options are rotated at seed/generation time.
 //
 // Items are spread across the eight CCR sub-skills:
 //   fecund leads, explanatory yield, parsimony as tiebreaker,
@@ -29,8 +32,8 @@ import type { McqItem, OpenItem } from "./diagnosticContent";
 export const CCR_SUBSKILLS: string[] = [
   "treating a surprising pattern as a fecund lead worth actively pursuing",
   "preferring the explanation with the most explanatory yield (one cause binding many effects)",
-  "using parsimony as the tiebreaker between two models that fit the data equally well",
-  "committing to the best abductive explanation instead of withholding judgment",
+  "when two models compete, taking the leaner one as the working hypothesis and naming the cheap test that would actually decide between them (never treating simplicity alone as proof)",
+  "committing to the explanation the available evidence best supports, and naming the check that would confirm it",
   "moving from a bare correlation to a specific, testable underlying mechanism",
   "treating a tight anomaly cluster as a real localized signal, not random scatter",
   "choosing the cheapest decisive test that separates the rival explanations",
@@ -45,7 +48,7 @@ export const CCR_MCQ_BANK: McqItem[] = [
   // --- fecund leads ---------------------------------------------------------
   {
     prompt:
-      "A small bakery notices that on the three days a particular regular customer visited, every leftover loaf sold out by noon, while on other days loaves lingered until evening. The owner has limited time to investigate. Which response best follows the CCR standard?",
+      "A small bakery notices that on the three days a particular regular customer visited, every leftover loaf sold out by noon, while on other days loaves lingered until evening. The owner has limited time to investigate. Which response reasons best?",
     options: [
       "Treat the regular's visits as a fecund lead: hypothesize she brings or attracts other buyers, and track foot traffic on her next visit to confirm the spillover.",
       "Conclude nothing can be inferred from only three days of data.",
@@ -55,7 +58,7 @@ export const CCR_MCQ_BANK: McqItem[] = [
   },
   {
     prompt:
-      "A game studio sees that bug reports spike sharply in the 20 minutes after each new level loads, then fall to near zero. A tester says 'it's probably nothing.' Which move best honors CCR?",
+      "A game studio sees that bug reports spike sharply in the 20 minutes after each new level loads, then fall to near zero. A tester says 'it's probably nothing.' Which move reasons best?",
     options: [
       "Follow the lead: hypothesize the level-load path itself introduces the faults, and instrument loads to log which assets fail right after loading.",
       "Conclude the timing is a coincidence that tells us nothing.",
@@ -67,7 +70,7 @@ export const CCR_MCQ_BANK: McqItem[] = [
   // --- explanatory yield ----------------------------------------------------
   {
     prompt:
-      "Three things happen together at a clinic: wait times drop, patient complaints fall, and staff overtime decreases — all starting the week a new scheduling tool launched. Two explanations are on the table. Which conclusion best follows under CCR?",
+      "Three things happen together at a clinic: wait times drop, patient complaints fall, and staff overtime decreases — all starting the week a new scheduling tool launched. Two explanations are on the table. Which conclusion best follows from the evidence?",
     options: [
       "The scheduling tool is the strongest candidate because one cause binds all three changes at once; confirm by pausing it for a week and watching whether all three revert.",
       "Each change probably has its own unrelated cause, so we can't say anything links them.",
@@ -77,7 +80,7 @@ export const CCR_MCQ_BANK: McqItem[] = [
   },
   {
     prompt:
-      "A teacher observes that since seating was rearranged, quiz scores rose, side-chatter fell, and more students ask questions. Which explanation has the most explanatory yield, per CCR?",
+      "A teacher observes that since seating was rearranged, quiz scores rose, side-chatter fell, and more students ask questions. Which explanation best fits all the evidence?",
     options: [
       "The new seating likely improved engagement, since one change accounts for all three effects together; test it by reverting the seating and checking whether all three slip back.",
       "We should pick whichever single effect is easiest to measure and ignore the rest.",
@@ -89,29 +92,29 @@ export const CCR_MCQ_BANK: McqItem[] = [
   // --- parsimony as tiebreaker ----------------------------------------------
   {
     prompt:
-      "Two models fit a store's sales data equally well. Model A: a single price cut drove the rise. Model B: a price cut, a secret weather effect, a hidden ad nobody can find, and a loyalty shift all combined to drive it. Both predict the same numbers. Which should CCR prefer?",
+      "Two models fit a store's sales data equally well. Model A: a single price cut drove the rise. Model B: a price cut, a secret weather effect, a hidden ad nobody can find, and a loyalty shift all combined to drive it. Both predict the same numbers, and nothing on hand separates them yet. What's the best move?",
     options: [
-      "Prefer Model A: with equal fit, the simpler model that posits fewer unsupported entities wins, and it makes the cleaner prediction that reversing the price cut will reverse the rise.",
-      "Prefer Model B because more factors always make an explanation more complete.",
-      "Refuse to choose, since two models fitting equally means nothing can be decided.",
-      "Flip a coin between them, since parsimony is just personal taste.",
+      "Take the single price cut as the leaner working hypothesis and actually settle it: reverse the price cut for a week and see whether the rise reverses.",
+      "Declare Model B correct because more factors always make an explanation more complete.",
+      "Insist the price cut alone is definitely the whole story and stop checking.",
+      "Conclude the cause is simply unknowable and change nothing.",
     ],
   },
   {
     prompt:
-      "A network outage could be explained by (A) one failed router everything routes through, or (B) five independent devices each failing in the same minute by chance. Both are consistent with the logs. Which conclusion best fits CCR?",
+      "A network outage could be explained by (A) one failed router everything routes through, or (B) five independent devices each failing in the same minute by chance. Both are consistent with the logs so far. What's the best move?",
     options: [
-      "Commit to the single failed router as the leading cause and verify by swapping that one router to see if service returns.",
+      "Take the single failed router as the leading hypothesis and test it directly: swap that one router and see if service returns.",
       "Assume all five devices failed at once, since covering more parts sounds more thorough.",
-      "Conclude the cause is unknowable because both stories fit the logs.",
-      "Decline to investigate until the outage happens a second time.",
+      "Declare the router guilty with certainty and skip any check.",
+      "Conclude the cause is unknowable and wait for the outage to recur on its own.",
     ],
   },
 
   // --- abductive commitment -------------------------------------------------
   {
     prompt:
-      "You return home to find the floor wet, the ceiling stained directly above, and a drip still falling from that spot. Which conclusion does CCR endorse?",
+      "You return home to find the floor wet, the ceiling stained directly above, and a drip still falling from that spot. Which conclusion is best supported?",
     options: [
       "Commit to the best explanation — a leak in the pipe or roof above that spot — and confirm by checking the area directly upstream of the drip.",
       "Withhold any judgment, since many imaginable scenarios could produce a wet floor.",
@@ -121,7 +124,7 @@ export const CCR_MCQ_BANK: McqItem[] = [
   },
   {
     prompt:
-      "A laptop won't power on. The charger light is off, the outlet runs other devices fine, and a different charger powers the laptop instantly. What does CCR call for?",
+      "A laptop won't power on. The charger light is off, the outlet runs other devices fine, and a different charger powers the laptop instantly. What is the best inference?",
     options: [
       "Infer the original charger is the faulty part — it best explains every observation — and confirm by testing that charger on an identical laptop.",
       "Refuse to name a cause, since a dead laptop could in principle have countless causes.",
@@ -133,7 +136,7 @@ export const CCR_MCQ_BANK: McqItem[] = [
   // --- correlation -> mechanism ---------------------------------------------
   {
     prompt:
-      "A café finds tips run far higher on days the barista wears a flower pin. She only wears the pin on days she feels cheerful. Which conclusion best follows under CCR?",
+      "A café finds tips run far higher on days the barista wears a flower pin. She only wears the pin on days she feels cheerful. Which conclusion best follows from the evidence?",
     options: [
       "Her cheerful mood likely drives both the pin-wearing and the higher tips; test the mechanism by having her wear the pin on a low-mood day and seeing if tips stay low.",
       "Conclude nothing, because correlation can never tell us anything at all.",
@@ -143,7 +146,7 @@ export const CCR_MCQ_BANK: McqItem[] = [
   },
   {
     prompt:
-      "Neighborhoods with more streetlights report fewer break-ins. They also tend to be wealthier, with more locks and alarms. Which response best fits CCR?",
+      "Neighborhoods with more streetlights report fewer break-ins. They also tend to be wealthier, with more locks and alarms. Which response reasons best?",
     options: [
       "Propose that wealth-linked security (locks, alarms) is the likely mechanism behind both more lights and fewer break-ins, and test it by comparing break-ins in equally wealthy blocks that differ only in lighting.",
       "Conclude streetlights directly and single-handedly stop all burglars.",
@@ -155,7 +158,7 @@ export const CCR_MCQ_BANK: McqItem[] = [
   // --- anomaly clusters -----------------------------------------------------
   {
     prompt:
-      "A factory's defect logs look random overall, but defects cluster tightly on items made between 2 and 3 p.m. on the same line. A manager calls it 'just random scatter.' What does CCR recommend?",
+      "A factory's defect logs look random overall, but defects cluster tightly on items made between 2 and 3 p.m. on the same line. A manager calls it 'just random scatter.' What is the best move?",
     options: [
       "Treat the cluster as a real signal: hypothesize a cause specific to that line and hour (a shift change or a warming machine) and test by sampling output across that exact window.",
       "Agree it is random scatter, since defects appear at other times too.",
@@ -165,7 +168,7 @@ export const CCR_MCQ_BANK: McqItem[] = [
   },
   {
     prompt:
-      "Customer complaints about a delivery app are spread thinly across the country, except for a dense cluster from one city in one week. Which conclusion best follows under CCR?",
+      "Customer complaints about a delivery app are spread thinly across the country, except for a dense cluster from one city in one week. Which conclusion best follows from the evidence?",
     options: [
       "Treat the cluster as a localized cause — a specific outage, courier, or update in that city that week — and confirm by pulling that city's logs for those exact days.",
       "Dismiss it as chance, since complaints occur everywhere anyway.",
@@ -177,7 +180,7 @@ export const CCR_MCQ_BANK: McqItem[] = [
   // --- cheap decisive tests -------------------------------------------------
   {
     prompt:
-      "A gardener suspects a new fertilizer, not extra sunlight, made one bed of plants grow taller than the rest. She wants the most informative next step for the least effort. Which is best under CCR?",
+      "A gardener suspects a new fertilizer, not extra sunlight, made one bed of plants grow taller than the rest. She wants the most informative next step for the least effort. Which is the best next step?",
     options: [
       "Apply the fertilizer to a shaded bed and withhold it from a sunny one — a cheap swap that decisively separates fertilizer from sunlight.",
       "Conclude the cause can't be known without a multi-year university study.",
@@ -187,7 +190,7 @@ export const CCR_MCQ_BANK: McqItem[] = [
   },
   {
     prompt:
-      "Two teams blame each other for slow page loads: the front-end team blames the server, the server team blames the front-end. Which single move best fits CCR's preference for cheap decisive tests?",
+      "Two teams blame each other for slow page loads: the front-end team blames the server, the server team blames the front-end. Which single move would most cheaply and decisively settle it?",
     options: [
       "Load the same page against a stripped-down test server: if it's still slow the front-end is implicated, and if it's fast the server is — one experiment that decides it.",
       "Hold more meetings until one team concedes.",
@@ -199,7 +202,7 @@ export const CCR_MCQ_BANK: McqItem[] = [
   // --- calibrated boldness --------------------------------------------------
   {
     prompt:
-      "A large, well-run trial shows a new drug cured 95% of patients with a condition, with few side effects. A reviewer says 'we still can't claim anything.' Which conclusion is best calibrated under CCR?",
+      "A large, well-run trial shows a new drug cured 95% of patients with a condition, with few side effects. A reviewer says 'we still can't claim anything.' Which conclusion is best calibrated to the evidence?",
     options: [
       "Conclude the drug will very likely help most future patients with this condition, and commit to that prediction while monitoring outcomes as it's rolled out.",
       "Refuse to predict anything, since no result is ever fully certain.",
@@ -209,7 +212,7 @@ export const CCR_MCQ_BANK: McqItem[] = [
   },
   {
     prompt:
-      "Across 40 cities, every time a bus lane was added, average commute times fell within a month, with no exceptions yet observed. A planner must advise a new city. What does calibrated CCR support?",
+      "Across 40 cities, every time a bus lane was added, average commute times fell within a month, with no exceptions yet observed. A planner must advise a new city. What is the best-calibrated advice?",
     options: [
       "Predict the bus lane will probably cut commute times here too, commit to building it, and pre-register the one-month commute check that would falsify the prediction.",
       "Advise that nothing can be predicted because every city is unique.",

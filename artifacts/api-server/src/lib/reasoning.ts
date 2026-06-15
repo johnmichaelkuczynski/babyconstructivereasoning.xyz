@@ -392,10 +392,12 @@ const openItemContent = (o: OpenItem): GeneratedItemContent => ({
 // CCR generation standard, shared by the MCQ and open generators so every
 // freshly generated diagnostic item enforces the inverted rubric.
 const CCR_STANDARD =
-  "Constructive Critical Reasoning (CCR) is the discipline of drawing the STRONGEST affirmative conclusion a body of data actually supports. " +
-  "The genuinely-best answer COMMITS to the richest, most-falsifiable model and/or names a cheap decisive test. " +
-  "The classic failure mode — which must always appear as a tempting WRONG option — is the timid 'you can't conclude anything' dodge. " +
-  "Other wrong options should be a reckless overreach the data defeats, or a passive/irrelevant move.";
+  "Constructive Critical Reasoning (CCR) means drawing the STRONGEST conclusion the AVAILABLE EVIDENCE actually warrants. " +
+  "CRITICAL — every scenario you write MUST contain concrete, discriminating evidence that genuinely points to one conclusion over the rivals. " +
+  "NEVER write a scenario where the rival explanations fit the facts equally well and nothing in the scenario separates them: in that case the honest answer really IS 'there isn't enough data to decide yet,' so marking that answer wrong would be an unfair trick question. Simplicity/parsimony alone is NOT proof — it can only suggest which cheap test to run, never settle the matter by itself. " +
+  "The genuinely-best answer commits to the conclusion the given evidence supports and/or names a cheap decisive test that would confirm it. " +
+  "Wrong options should be: a reckless overreach the evidence does NOT support, and a passive/give-up move (e.g. 'the cause is unknowable, change nothing'). Include a 'you can't conclude anything' refusal as a distractor ONLY when the scenario truly contains enough discriminating evidence to decide — there it is wrong precisely because the data DOES point somewhere. " +
+  "Never punish a reasoner for declining to guess when no evidence favors either side.";
 
 // Generate fresh CCR scenario MCQs, one per given sub-skill (in order).
 async function generateCcrMcq(
@@ -404,10 +406,10 @@ async function generateCcrMcq(
 ): Promise<GeneratedItemContent[]> {
   if (subskills.length === 0) return [];
   const system =
-    "You are an assessment author writing ORIGINAL constructive-critical-reasoning multiple-choice questions. " +
+    "You are an assessment author writing ORIGINAL reasoning multiple-choice questions. " +
     CCR_STANDARD +
-    " Each question must present a short, concrete everyday SCENARIO with data, and ask which response best follows the CCR standard — never a one-word definition or recitation. " +
-    "Each has exactly four options with one unambiguously best answer. List the CORRECT (most-committed, most-testable) option FIRST; among the three wrong distractors, ALWAYS include the 'can't conclude anything' dodge. " +
+    " Each question must present a short, concrete everyday SCENARIO that INCLUDES specific discriminating evidence, then ask — in plain language a thoughtful person can answer WITHOUT having taken any course — which response reasons best about it. Never name a 'standard' or doctrine in the prompt, and never ask for a definition or recitation. " +
+    "Each has exactly four options with one unambiguously best answer. List the CORRECT (best-supported, most-testable) option FIRST. Make the three distractors a reckless overreach the evidence doesn't support, a passive/give-up move, and (only if the scenario genuinely has enough evidence to decide) a 'can't conclude anything' refusal; if it does not, use another flawed-reasoning distractor instead. " +
     "Write fresh questions on varied everyday topics — do NOT reuse the example wording. " +
     'Respond ONLY as JSON of the form {"items":[{"prompt":"...","options":["correct","wrong","wrong","wrong"]}]}.';
   const user =
@@ -455,7 +457,7 @@ async function generateOpenItems(
   const system =
     "You are an assessment author writing ORIGINAL very short open-response questions that can be answered in ONE or TWO sentences. " +
     CCR_STANDARD +
-    " Each presents a brief everyday situation with data and asks the student to state the strongest conclusion worth committing to AND a test (or falsifying prediction) — rewarding commitment over the 'can't conclude' dodge. " +
+    " Each presents a brief everyday situation that INCLUDES specific discriminating evidence, and asks the student to state the strongest conclusion that evidence supports AND a test (or falsifying prediction). Only build situations where the evidence genuinely points somewhere — never one where the honest answer is 'there's no data to decide.' Phrase it plainly, with no doctrine name. " +
     "Each prompt MUST be a single, self-contained question with NO multi-part scaffolding: never ask for a specific number of examples, never split into sub-parts like 'A, B, and C', and never tack on extra constraints. Keep it short, plain, and low-effort so a busy student answers it in a sentence or two. " +
     "For each question also provide keyPoints: the 1-3 core ideas a correct brief answer should capture (the committed conclusion and the test). " +
     'Respond ONLY as JSON {"items":[{"prompt":"...","keyPoints":["..."]}]}.';

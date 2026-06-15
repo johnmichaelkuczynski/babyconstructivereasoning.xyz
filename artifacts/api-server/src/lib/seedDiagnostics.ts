@@ -25,22 +25,97 @@ function rotateOptions(options: string[]): {
   return { options: rotated, correctIndex: off };
 }
 
-// Signature of the desired seed: the sorted set of "instrument:phase" keys.
+// Small stable hash of a string, used as a content marker so a change to the
+// seeded prompts/instructions (not just the instrument/phase set) triggers a
+// self-healing reseed.
+function contentHash(s: string): string {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) {
+    h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  }
+  return (h >>> 0).toString(36);
+}
+
+// The per-assessment content fingerprint: its instructions plus the ordered
+// prompts. Options are rotated at seed time so they are intentionally excluded;
+// prompts and instructions are stored verbatim and capture the content edits we
+// care about.
+function assessmentContent(
+  instrument: string,
+  phase: string,
+  instructions: string,
+  prompts: string[],
+): string {
+  return `${instrument}:${phase}\n${instructions}\n${prompts.join("\n")}`;
+}
+
+// Signature of the desired seed: the sorted set of "instrument:phase" keys plus
+// a hash of the seeded content (instructions + prompts), so editing any prompt
+// re-triggers seeding even though the instrument/phase set is unchanged.
 function desiredSignature(): string {
-  return DIAGNOSTIC_SEED.map((a) => `${a.instrument}:${a.phase}`)
+  const keys = DIAGNOSTIC_SEED.map((a) => `${a.instrument}:${a.phase}`)
     .sort()
     .join("|");
+  const content = DIAGNOSTIC_SEED.map((a) =>
+    assessmentContent(
+      a.instrument,
+      a.phase,
+      a.instructions,
+      a.mcqs.map((m) => m.prompt),
+    ),
+  )
+    .sort()
+    .join("\n---\n");
+  return `${keys}::${contentHash(content)}`;
 }
 
 async function existingSignature(): Promise<string> {
   const res = await db.execute(
-    sql`select instrument, phase from diagnostic_assessments`,
+    sql`select a.id, a.instrument, a.phase, a.instructions, i.prompt, i.position
+        from diagnostic_assessments a
+        left join diagnostic_items i
+          on i.assessment_id = a.id and i.attempt_id is null
+        order by a.id, i.position`,
   );
-  const rows = res.rows as { instrument?: string; phase?: string }[];
-  return rows
-    .map((r) => `${r.instrument}:${r.phase}`)
+  const rows = res.rows as {
+    id?: number;
+    instrument?: string;
+    phase?: string;
+    instructions?: string;
+    prompt?: string | null;
+    position?: number | null;
+  }[];
+  if (rows.length === 0) return "";
+  const byAssessment = new Map<
+    number,
+    { instrument: string; phase: string; instructions: string; prompts: string[] }
+  >();
+  for (const r of rows) {
+    const id = r.id!;
+    let entry = byAssessment.get(id);
+    if (!entry) {
+      entry = {
+        instrument: r.instrument ?? "",
+        phase: r.phase ?? "",
+        instructions: r.instructions ?? "",
+        prompts: [],
+      };
+      byAssessment.set(id, entry);
+    }
+    if (typeof r.prompt === "string") entry.prompts.push(r.prompt);
+  }
+  const entries = [...byAssessment.values()];
+  const keys = entries
+    .map((e) => `${e.instrument}:${e.phase}`)
     .sort()
     .join("|");
+  const content = entries
+    .map((e) =>
+      assessmentContent(e.instrument, e.phase, e.instructions, e.prompts),
+    )
+    .sort()
+    .join("\n---\n");
+  return `${keys}::${contentHash(content)}`;
 }
 
 async function insertSeed(): Promise<void> {
