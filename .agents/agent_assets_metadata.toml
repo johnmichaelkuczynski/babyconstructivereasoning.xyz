@@ -23,3 +23,9 @@ id = "KiiQySgB89UBQOWmdDlz4"
 uri = "file://artifacts/course-video/public/audio/bg_music.mp3"
 type = "audio"
 title = "background music"
+
+[[outputs]]
+id = "0vLhZhfGBVm-HKjtkWPwz"
+uri = "file://artifacts/course-video/YOUTUBE_DESCRIPTION.md"
+type = "text"
+title = "YouTube Description — Constructive Critical Reasoning"
