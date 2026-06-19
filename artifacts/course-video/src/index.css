@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #1B284B; /* Oxford Blue */
+  --color-secondary: #E2E8F0; /* borders */
+  --color-accent: #2A9D8F; /* teal */
+
+  --color-bg-light: #FDFBF7; /* parchment */
+  --color-bg-dark: #0F1629; /* ink */
+  --color-bg-muted: #FFFFFF; /* card white */
+
+  --color-text-primary: #0F1629; /* ink */
+  --color-text-secondary: #64748B; /* muted-foreground */
+  --color-text-muted: #E2E8F0;
+  --color-text-inverse: #FDFBF7;
+
+  --color-success: #2A9D8F;
+  --color-warning: #E9C46A;
+  --color-error: #ED6B51;
+
+  --font-display: 'Georgia', serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'Menlo', monospace;
+}
+
+@theme inline {
+  --color-primary: var(--color-primary);
+  --color-secondary: var(--color-secondary);
+  --color-accent: var(--color-accent);
+  --color-bg-light: var(--color-bg-light);
+  --color-bg-dark: var(--color-bg-dark);
+  --color-bg-muted: var(--color-bg-muted);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-inverse: var(--color-text-inverse);
+  
+  --color-chart-1: #2A9D8F;
+  --color-chart-2: #ED6B51;
+  --color-chart-3: #264653;
+  --color-chart-4: #E9C46A;
+  --color-chart-5: #F4A261;
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+}
+
+body {
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-bg-light);
+  color: var(--color-text-primary);
+}

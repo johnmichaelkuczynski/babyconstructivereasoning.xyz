@@ -17,3 +17,9 @@ id = "gBlmXbiu3K5FNCNv2fX9f"
 uri = "file://README.md"
 type = "text"
 title = "README — Evolutionary Psychology for Children"
+
+[[outputs]]
+id = "KiiQySgB89UBQOWmdDlz4"
+uri = "file://artifacts/course-video/public/audio/bg_music.mp3"
+type = "audio"
+title = "background music"
