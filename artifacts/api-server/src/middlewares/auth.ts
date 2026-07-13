@@ -1,25 +1,32 @@
 /**
- * Clerk Frontend API Proxy Middleware
+ * All login/authentication code for the API server lives in this single file.
  *
- * Proxies Clerk Frontend API requests through your domain, enabling Clerk
- * authentication on custom domains and .replit.app deployments without
- * requiring CNAME DNS configuration.
+ * It provides two middlewares:
+ *
+ * 1. clerkProxyMiddleware() — proxies Clerk Frontend API requests through
+ *    your domain, enabling Clerk authentication on custom domains and
+ *    .replit.app deployments without requiring CNAME DNS configuration.
+ *    - Only active in production (Clerk proxying doesn't work for dev instances)
+ *    - Must be mounted BEFORE express.json() middleware
+ *
+ * 2. clerkAuthMiddleware() — attaches Clerk auth state to every request,
+ *    resolving the publishable key from the incoming request host so the
+ *    same server can serve multiple Clerk custom domains.
  *
  * AUTH CONFIGURATION: To manage users, enable/disable login providers
  * (Google, GitHub, etc.), change app branding, or configure OAuth credentials,
  * use the Auth pane in the workspace toolbar. There is no external Clerk
  * dashboard — all auth configuration is done through the Auth pane.
  *
- * IMPORTANT:
- * - Only active in production (Clerk proxying doesn't work for dev instances)
- * - Must be mounted BEFORE express.json() middleware
- *
  * Usage in app.ts:
- *   import { CLERK_PROXY_PATH, clerkProxyMiddleware } from "./middlewares/clerkProxyMiddleware";
- *   app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
+ *   import { CLERK_PROXY_PATH, clerkProxyMiddleware, clerkAuthMiddleware } from "./middlewares/auth";
+ *   app.use(CLERK_PROXY_PATH, clerkProxyMiddleware()); // before body parsers
+ *   app.use(clerkAuthMiddleware());                    // after body parsers
  */
 
 import { createProxyMiddleware } from "http-proxy-middleware";
+import { clerkMiddleware } from "@clerk/express";
+import { publishableKeyFromHost } from "@clerk/shared/keys";
 import type { RequestHandler } from "express";
 import type { IncomingHttpHeaders } from "http";
 
@@ -88,4 +95,19 @@ export function clerkProxyMiddleware(): RequestHandler {
       },
     },
   }) as RequestHandler;
+}
+
+/**
+ * Attaches Clerk auth state to every request. Resolves the publishable key
+ * from the incoming request host so the same server can serve multiple Clerk
+ * custom domains. Falls back to CLERK_PUBLISHABLE_KEY when the host doesn't
+ * map to a custom domain.
+ */
+export function clerkAuthMiddleware(): RequestHandler {
+  return clerkMiddleware((req) => ({
+    publishableKey: publishableKeyFromHost(
+      getClerkProxyHost(req) ?? "",
+      process.env.CLERK_PUBLISHABLE_KEY,
+    ),
+  }));
 }
