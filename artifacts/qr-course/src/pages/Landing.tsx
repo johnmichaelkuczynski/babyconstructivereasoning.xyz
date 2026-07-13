@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { SignInWithGoogleButton } from "@/auth";
 import {
   BarChart3,
   BookOpen,
@@ -66,22 +66,12 @@ export default function Landing() {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/sign-in">
-            <button
-              className="px-4 py-2 rounded-md text-sm font-medium border border-border hover:bg-secondary transition-colors"
-              data-testid="button-sign-in"
-            >
-              Sign in
-            </button>
-          </Link>
-          <Link href="/sign-up">
-            <button
-              className="px-4 py-2 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-              data-testid="button-sign-up"
-            >
-              Get started
-            </button>
-          </Link>
+          <SignInWithGoogleButton
+            className="px-4 py-2 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            testId="button-sign-in"
+          >
+            Sign in with Google
+          </SignInWithGoogleButton>
         </div>
       </header>
 
@@ -100,22 +90,12 @@ export default function Landing() {
             the evidence supports, instead of the safe "you can't really know" dodge.
           </p>
           <div className="flex items-center justify-center gap-3">
-            <Link href="/sign-up">
-              <button
-                className="px-6 py-3 rounded-md text-base font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                data-testid="button-cta-start"
-              >
-                Sign in with Google to start
-              </button>
-            </Link>
-            <Link href="/sign-in">
-              <button
-                className="px-6 py-3 rounded-md text-base font-medium border border-border hover:bg-secondary transition-colors"
-                data-testid="button-cta-signin"
-              >
-                I already have an account
-              </button>
-            </Link>
+            <SignInWithGoogleButton
+              className="px-6 py-3 rounded-md text-base font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              testId="button-cta-start"
+            >
+              Sign in with Google to start
+            </SignInWithGoogleButton>
           </div>
         </section>
 

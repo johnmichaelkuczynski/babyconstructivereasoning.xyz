@@ -3,14 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
-import {
-  AuthProvider,
-  AuthCacheInvalidator,
-  AuthHome,
-  SignInPage,
-  SignUpPage,
-  protectedComponent,
-} from "@/auth";
+import { AuthHome, protectedComponent } from "@/auth";
 
 import Landing from "@/pages/Landing";
 import Dashboard from "@/pages/Dashboard";
@@ -39,8 +32,6 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={HomeRedirect} />
-      <Route path="/sign-in/*?" component={SignInPage} />
-      <Route path="/sign-up/*?" component={SignUpPage} />
       <Route path="/dashboard" component={protectedComponent(Dashboard)} />
       <Route path="/assignments" component={protectedComponent(Assignments)} />
       <Route
@@ -80,15 +71,12 @@ function Router() {
 function App() {
   return (
     <WouterRouter base={basePath}>
-      <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <AuthCacheInvalidator />
-          <TooltipProvider>
-            <Router />
-            <Toaster />
-          </TooltipProvider>
-        </QueryClientProvider>
-      </AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Router />
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
     </WouterRouter>
   );
 }

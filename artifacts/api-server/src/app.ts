@@ -3,11 +3,7 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import path from "node:path";
 import fs from "node:fs";
-import {
-  CLERK_PROXY_PATH,
-  clerkProxyMiddleware,
-  clerkAuthMiddleware,
-} from "./middlewares/auth";
+import { setupAuth } from "./auth";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
@@ -33,15 +29,13 @@ app.use(
   }),
 );
 
-// Clerk auth proxy must be mounted before body parsers (it streams raw bytes).
-app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
-
 app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Attaches Clerk auth state to every request (see middlewares/auth.ts).
-app.use(clerkAuthMiddleware());
+// Google OAuth login: sessions, passport, login/callback/logout routes,
+// and admin visitor analytics (see ./auth.ts).
+setupAuth(app);
 
 app.use("/api", router);
 
