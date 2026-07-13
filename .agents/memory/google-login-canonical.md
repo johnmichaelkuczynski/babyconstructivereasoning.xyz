@@ -14,3 +14,4 @@ The owner mandates REAL Google OAuth (passport-google-oauth20) — never Clerk, 
 - Dev-preview login fails with redirect_uri_mismatch unless the current `REPLIT_DEV_DOMAIN` callback is also registered in the Google console.
 - The monorepo compiles with `noImplicitReturns`; the canonical logout handler's `return res.status(500).json(...)` must be restructured to `res...; return;`.
 - Admin analytics (`/api/admin/visits`) gate on hardcoded ADMIN_EMAIL johnmichaelkuczynski@gmail.com inside the canonical file.
+- connect-pg-simple's `createTableIfMissing` reads `table.sql` relative to `__dirname`; under an esbuild-bundled server that file is missing at runtime, the session store silently fails, OAuth state can't persist, and every login bounces with `auth_failed`. Ship `table.sql` next to the bundle (build plugin) and/or pre-create the `user_sessions` table.

@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build as esbuild } from "esbuild";
 import esbuildPluginPino from "esbuild-plugin-pino";
-import { rm } from "node:fs/promises";
+import { rm, copyFile } from "node:fs/promises";
 
 // Plugins (e.g. 'esbuild-plugin-pino') may use `require` to resolve dependencies
 globalThis.require = createRequire(import.meta.url);
@@ -104,7 +104,18 @@ async function buildAll() {
     sourcemap: "linked",
     plugins: [
       // pino relies on workers to handle logging, instead of externalizing it we use a plugin to handle it
-      esbuildPluginPino({ transports: ["pino-pretty"] })
+      esbuildPluginPino({ transports: ["pino-pretty"] }),
+      // connect-pg-simple reads table.sql (relative to __dirname) when it
+      // needs to create the session table; ship it alongside the bundle.
+      {
+        name: "copy-connect-pg-simple-table-sql",
+        setup(buildCtx) {
+          buildCtx.onEnd(async () => {
+            const src = globalThis.require.resolve("connect-pg-simple/table.sql");
+            await copyFile(src, path.join(distDir, "table.sql"));
+          });
+        },
+      },
     ],
     // Make sure packages that are cjs only (e.g. express) but are bundled continue to work in our esm output file
     banner: {
